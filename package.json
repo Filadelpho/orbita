@@ -1,0 +1,10 @@
+{
+  "name": "orbita-app",
+  "version": "0.1.0",
+  "private": true,
+  "description": "ORBITA — A vida inteira em dia.",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "node server.js"
+  }
+}
