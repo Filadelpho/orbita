@@ -10,6 +10,7 @@ import { startPixels } from './pixels.js';
 import './event-modal.js';
 import './habit-modal.js';
 import './task-modal.js';
+import { afterCalendarRender } from './agenda.js';
 import { habitList, habitDue } from './habits.js';
 
 const app = document.getElementById('app');
@@ -30,6 +31,7 @@ function render() {
   if (!state.user) return renderAuth();
   if (!state.onboarded) return renderOnboarding();
   renderShell();
+  afterCalendarRender();
 }
 bus.render = render;
 subscribe(render);

@@ -9,7 +9,7 @@ const DOW = ['Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb', 'Dom'];
 const iso = (d) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
 const prioKey = (p) => p.normalize('NFD').replace(/\p{M}/gu, '').toLowerCase();
 // Ícone de prioridade: alerta para urgente, barrinhas de sinal para as outras.
-const prioIcon = (p) => {
+export const prioIcon = (p) => {
   if (p === 'Urgente') return `<svg class="i" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 21a9 9 0 1 0 0-18 9 9 0 0 0 0 18zM12 8v5M12 16h.01"/></svg>`;
   const lvl = (PRIOS.find((x) => x[0] === p) || [0, 0])[1];
   if (!lvl) return '<span class="tkm-dash">—</span>';
@@ -40,7 +40,7 @@ const fresh = (mode = 'task', d = {}) => ({
   mode, title: d.title || '', details: d.notes || '', showDetails: !!d.notes,
   due: d.due ?? (new Date().getHours() >= 18 ? addDays(1) : today()),
   time: d.time || '', priority: d.priority && d.priority !== 'Média' ? d.priority : '', project: d.project || '',
-  image: null, noteTitle: '', noteBody: '', pop: null, calY: null, calM: null,
+  image: null, noteTitle: '', noteBody: '', pop: null, calY: null, calM: null, folder: d.folder || '', status: d.status || '',
 });
 
 export function openTaskModal(defaults = {}, mode = 'task') {
@@ -236,6 +236,8 @@ function save(keepOpen) {
     tags: q.tags?.join(', ') || undefined,
     notes: tm.details.trim() || undefined,
     image: tm.image || undefined,
+    status: tm.status || 'A fazer',
+    folder: tm.folder || undefined,
   };
   upsert('tasks', task);
   const when = task.due === today() ? ' para hoje' : task.due === addDays(1) ? ' para amanhã' : task.due ? ` para ${shortDate(task.due)}` : '';

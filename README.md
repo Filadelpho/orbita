@@ -72,6 +72,9 @@ public/
   js/home.js         cartões de progresso e ritmo do Início
   js/event-modal.js  janela de novo compromisso
   js/habit-modal.js  janela de novo hábito
+  js/task-modal.js   janela de nova tarefa / nota
+  js/tasks.js        página de tarefas (lista e Kanban)
+  js/agenda.js       calendário (mês, semana, dia e agenda)
   js/habits.js       regras dos hábitos: grupos, frequência e desafios
   js/cover.js        capa do Início: animada, Unsplash ou foto própria
   js/pixels.js       fundo animado de pixels

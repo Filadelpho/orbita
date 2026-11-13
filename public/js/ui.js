@@ -102,8 +102,12 @@ function fieldInput(f, v) {
   switch (f.type) {
     case 'textarea': return `<textarea ${n} rows="4" ${req}>${esc(val)}</textarea>`;
     case 'select':
-      return `<select ${n} ${req}>${f.required ? '' : '<option value="">—</option>'}${f.options
-        .map((o) => `<option ${o === val ? 'selected' : ''}>${esc(o)}</option>`).join('')}</select>`;
+    {
+      let opts = typeof f.options === 'function' ? f.options() : f.options;
+      if (val && !opts.some((o) => (Array.isArray(o) ? o[0] : o) === val)) opts = [...opts, val];
+      return `<select ${n} ${req}>${f.required ? '' : '<option value="">—</option>'}${opts
+        .map((o) => { const [v, l] = Array.isArray(o) ? o : [o, o]; return `<option value="${esc(v)}" ${v === val ? 'selected' : ''}>${esc(l)}</option>`; }).join('')}</select>`;
+    }
     case 'checkbox': return `<label class="switch"><input type="checkbox" ${n} ${val ? 'checked' : ''}><span></span></label>`;
     case 'progress':
       return `<div class="range"><input type="range" min="0" max="100" step="5" ${n} value="${+val || 0}" oninput="this.nextElementSibling.textContent=this.value+'%'"><output>${+val || 0}%</output></div>`;

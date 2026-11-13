@@ -8,6 +8,8 @@ import { insights, financeSummary, habitStreak, weekHabitRate, avg, reply } from
 import { coverArt, openCoverPicker } from './cover.js';
 import { settingsPage } from './settings.js';
 import { openTaskModal } from './task-modal.js';
+import { tasksPage } from './tasks.js';
+import { calendarPage } from './agenda.js';
 import { habitList, habitTree, groupChildren, habitDue, challengeInfo, freqLabel } from './habits.js';
 import { dLink, dCard, dEmpty, dBtn, fmtMin, focusWeek, focusBars, focusItemsCard, projectsCard, achievementsCard, heatmapCard, rhythmCard, dataCard } from './home.js';
 
@@ -15,7 +17,7 @@ import { dLink, dCard, dEmpty, dBtn, fmtMin, focusWeek, focusBars, focusItemsCar
 export const PAGES = [
   { id: 'dashboard', title: 'Início', icon: 'home', render: dashboard },
   { id: 'ai', title: 'ORBITA AI', icon: 'spark', render: aiPage },
-  { id: 'tasks', group: 'Organização', title: 'Tarefas', icon: 'check', module: 'tasks', tabs: ['tasks'], desc: 'Tudo o que precisa ser feito, por prioridade e data.' },
+  { id: 'tasks', group: 'Organização', title: 'Tarefas', icon: 'check', module: 'tasks', render: () => tasksPage() },
   { id: 'calendar', group: 'Organização', title: 'Calendário', icon: 'calendar', module: 'calendar', render: calendarPage },
   { id: 'habits', group: 'Organização', title: 'Hábitos e rotina', icon: 'repeat', module: 'habits', render: habitsPage },
   { id: 'goals', group: 'Organização', title: 'Metas e projetos', icon: 'target', module: 'goals', tabs: ['goals', 'personalProjects'], desc: 'Seus objetivos pessoais e os projetos que te levam até eles.' },
@@ -623,66 +625,6 @@ document.addEventListener('drop', (e) => {
   if (from < 0 || to < 0 || from === to) return;
   arr.splice(to, 0, arr.splice(from, 1)[0]);
   save();
-});
-
-// ---------- Calendário ----------
-function calendarEntries(date) {
-  const out = [];
-  if (moduleOn('calendar') || moduleOn('tasks')) items('events').filter((e) => e.date === date).forEach((e) => out.push({ cls: '', text: (e.time ? e.time + ' ' : '') + e.title, key: 'events', id: e.id, time: e.time || '' }));
-  if (moduleOn('tasks')) items('tasks').filter((t) => t.due === date).forEach((t) => out.push({ cls: 'task', text: (t.done ? '✓ ' : '') + t.title, key: 'tasks', id: t.id, time: t.time || '99' }));
-  if (moduleOn('finance')) items('bills').filter((b) => b.due === date && !b.paid).forEach((b) => out.push({ cls: 'bill', text: `${b.title} · ${brl(b.amount)}`, key: 'bills', id: b.id, time: '98' }));
-  if (moduleOn('finance')) items('subscriptions').filter((s) => s.next === date).forEach((s) => out.push({ cls: 'bill', text: `${s.name} · ${brl(s.amount)}`, key: 'subscriptions', id: s.id, time: '98' }));
-  if (moduleOn('content')) items('posts').filter((p) => p.date === date).forEach((p) => out.push({ cls: 'post', text: `${p.platform || ''}: ${p.title}`, key: 'posts', id: p.id, time: '97' }));
-  if (moduleOn('travel')) items('trips').filter((t) => t.start && t.start <= date && (t.end || t.start) >= date).forEach((t) => out.push({ cls: 'trip', text: '✈ ' + t.destination, key: 'trips', id: t.id, time: '00' }));
-  if (moduleOn('studies')) items('studies').filter((s) => s.deadline === date).forEach((s) => out.push({ cls: 'task', text: '🎓 ' + s.title, key: 'studies', id: s.id, time: '96' }));
-  return out.sort((a, b) => a.time.localeCompare(b.time));
-}
-
-function calendarPage() {
-  const T = today();
-  const cursor = ui.calCursor ? parseISO(ui.calCursor) : new Date();
-  const y = cursor.getFullYear(), m = cursor.getMonth();
-  const first = new Date(y, m, 1);
-  const ws = state.settings.weekStart === 1 ? 1 : 0;
-  const start = new Date(y, m, 1 - ((first.getDay() - ws + 7) % 7));
-  const sel = ui.calSelected || T;
-  let cells = '';
-  for (let i = 0; i < 42; i++) {
-    const d = new Date(start); d.setDate(start.getDate() + i);
-    const ds = iso(d);
-    const ents = calendarEntries(ds);
-    cells += `<button class="cal-day ${d.getMonth() !== m ? 'out' : ''} ${ds === T ? 'today' : ''} ${ds === sel ? 'sel' : ''}" data-action="cal-select" data-date="${ds}">
-      <span class="n">${d.getDate()}</span>${ents.slice(0, 3).map((e) => `<span class="cal-ev ${e.cls}">${esc(e.text)}</span>`).join('')}${ents.length > 3 ? `<span class="cal-more">+${ents.length - 3}</span>` : ''}</button>`;
-  }
-  const dayEnts = calendarEntries(sel);
-  const selD = parseISO(sel);
-  return head('Calendário', 'Compromissos, tarefas, contas, conteúdos e viagens em uma só agenda.', `
-      <button class="btn" data-action="cal-today">Hoje</button>
-      <button class="icon-btn" data-action="cal-move" data-d="-1" aria-label="Mês anterior">${icon('chevL')}</button>
-      <button class="icon-btn" data-action="cal-move" data-d="1" aria-label="Próximo mês">${icon('chevR')}</button>
-      <button class="btn primary" data-action="open-form" data-key="events" data-def-date="${sel}">${icon('plus')}Compromisso</button>`) + `
-    <div class="cal">
-      <div><h2 style="margin:0 0 12px;font-size:20px;letter-spacing:-.02em">${MONTHS_FULL[m]} <span class="muted" style="font-weight:400">${y}</span></h2>
-        <div class="cal-grid">${[...WEEKDAYS.slice(ws), ...WEEKDAYS.slice(0, ws)].map((w) => `<div class="cal-dow">${w}</div>`).join('')}${cells}</div>
-        <div class="legend" style="flex-wrap:wrap"><span><i style="background:var(--accent)"></i>Compromissos</span><span><i style="background:var(--surface-3)"></i>Tarefas</span><span><i style="background:var(--danger)"></i>Contas</span><span><i style="background:var(--purple)"></i>Conteúdo</span><span><i style="background:var(--success)"></i>Viagens</span></div>
-      </div>
-      <div class="card">
-        <div class="card-head"><h3>${cap(selD.toLocaleDateString('pt-BR', { weekday: 'long', day: 'numeric', month: 'long' }))}</h3></div>
-        ${dayEnts.length ? `<div class="list">${dayEnts.map((e) => `<div class="item" data-action="open-form" data-key="${e.key}" data-id="${e.id}" style="cursor:pointer"><span class="cal-ev ${e.cls}" style="width:6px;height:28px;padding:0;flex:none"></span><div class="item-main"><div class="item-title">${esc(e.text)}</div><div class="item-sub">${esc(COLLECTIONS[e.key].label)}</div></div></div>`).join('')}</div>` : emptyState('calendar', 'Nada neste dia.')}
-        <div style="display:flex;gap:8px;margin-top:12px;flex-wrap:wrap">
-          <button class="btn sm" data-action="open-form" data-key="events" data-def-date="${sel}">${icon('plus')}Compromisso</button>
-          <button class="btn sm" data-action="open-form" data-key="tasks" data-def-due="${sel}">${icon('plus')}Tarefa</button>
-        </div>
-      </div>
-    </div>`;
-}
-on('cal-select', (ds) => { ui.calSelected = ds.date; bus.render(); });
-on('cal-today', () => { ui.calCursor = null; ui.calSelected = today(); bus.render(); });
-on('cal-move', (ds) => {
-  const c = ui.calCursor ? parseISO(ui.calCursor) : new Date();
-  c.setDate(1); c.setMonth(c.getMonth() + +ds.d);
-  ui.calCursor = iso(c);
-  bus.render();
 });
 
 // ---------- Finanças ----------

@@ -1,5 +1,5 @@
 // Definição declarativa de cada coleção: campos, exibição e regras.
-import { today } from './store.js';
+import { today, state } from './store.js';
 
 export const EXPENSE_CATS = ['Alimentação', 'Moradia', 'Transporte', 'Saúde', 'Educação', 'Lazer', 'Assinaturas', 'Compras', 'Outros'];
 export const INCOME_CATS = ['Salário', 'Freelance', 'Investimentos', 'Presente', 'Outros'];
@@ -20,7 +20,9 @@ export const COLLECTIONS = {
       { name: 'time', label: 'Horário', type: 'time' },
       { name: 'priority', label: 'Prioridade', type: 'select', options: ['Urgente', 'Alta', 'Média', 'Baixa'], default: 'Média' },
       { name: 'area', label: 'Área', type: 'select', options: AREAS },
-      { name: 'project', label: 'Projeto', type: 'text' },
+      { name: 'status', label: 'Status', type: 'select', options: ['Backlog', 'A fazer', 'Em progresso', 'Em revisão'], default: 'A fazer' },
+      { name: 'project', label: 'Projeto', type: 'select', options: () => [...(state.data.personalProjects || []), ...(state.data.workProjects || [])].map((p) => p.title).filter(Boolean) },
+      { name: 'folder', label: 'Pasta', type: 'select', options: () => (state.data.taskFolders || []).map((f) => [f.id, f.name]) },
       { name: 'tags', label: 'Tags', type: 'text' },
       { name: 'notes', label: 'Notas', type: 'textarea', full: true },
     ],
