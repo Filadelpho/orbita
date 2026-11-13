@@ -1275,3 +1275,6 @@ kbd.rec { color: var(--accent); border-color: var(--accent); animation: pulse 1.
   .hbm-grid.three .hbm-opt { min-height: 48px; }
   .hbm-emojis { grid-template-columns: repeat(5, 1fr); }
 }
+
+.habits-done .dempty-ico { background: color-mix(in srgb, var(--success) 18%, transparent); color: var(--success); }
+.habits-done .dempty-ico svg.i { stroke-width: 3; }

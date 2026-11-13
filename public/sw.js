@@ -1,5 +1,5 @@
 // Service worker: deixa o ORBITA funcionando offline (network-first, cai no cache).
-const CACHE = 'orbita-v10';
+const CACHE = 'orbita-v11';
 const SHELL = [
   './', 'index.html', 'css/styles.css', 'icon.svg', 'manifest.webmanifest',
   'js/app.js', 'js/store.js', 'js/ui.js', 'js/icons.js', 'js/collections.js',

@@ -229,7 +229,16 @@ function dashboard() {
     const habits = habitList().filter((h) => habitDue(h, T));
     const doneH = habits.filter((h) => h.log?.[T]).length;
     const rows = habitTree().filter(({ h }) => h.group ? groupChildren(h).some((c) => habitDue(c, T)) : habitDue(h, T)).slice(0, 9);
-    hoje.push(dCard('repeat', 'Hábitos de hoje', rows.length ? `
+    // Com todos os hábitos do dia feitos, a lista sai do Início e fica só a comemoração.
+    const allDone = habits.length > 0 && doneH === habits.length && !ui.showDoneHabits;
+    if (allDone) {
+      const best = Math.max(0, ...habits.map(habitStreak));
+      hoje.push(dCard('repeat', 'Hábitos de hoje', `
+      <div class="dempty habits-done"><span class="dempty-ico">${icon('check')}</span><b>Todos os hábitos de hoje feitos 🎉</b>
+        <p>${habits.length} de ${habits.length} concluídos${best > 1 ? ` · maior sequência: 🔥 ${best} dias` : ''}. Volte amanhã para manter o ritmo.</p>
+        <button class="dbtn ghost" data-action="show-done-habits">Ver hábitos de hoje</button></div>`,
+      { link: dLink('habits', 'Hábitos'), cls: 'tallh' }));
+    } else hoje.push(dCard('repeat', 'Hábitos de hoje', rows.length ? `
       <div class="hlist">${rows.map(({ h, depth }) => {
         if (h.group) {
           const kids = groupChildren(h).filter((c) => habitDue(c, T));
@@ -241,7 +250,7 @@ function dashboard() {
           <span class="emoji">${esc(h.emoji || '✨')}</span><span class="name">${esc(h.name)}${c ? `<small>Dia ${c.day} de ${c.total}</small>` : h.minutes ? `<small>${h.minutes} min</small>` : ''}</span>
           ${habitStreak(h) ? `<span class="streak">🔥 ${habitStreak(h)}</span>` : ''}<span class="tick">${icon('check')}</span></button>`;
       }).join('')}</div>
-      <div class="hfoot"><span>${doneH} de ${habits.length} feitos hoje</span><div class="bar"><i style="width:${habits.length ? (doneH / habits.length) * 100 : 0}%"></i></div></div>`
+      <div class="hfoot"><span>${doneH} de ${habits.length} feitos hoje${ui.showDoneHabits && doneH === habits.length ? ' · <button class="link-btn" data-action="hide-done-habits">Esconder</button>' : ''}</span><div class="bar"><i style="width:${habits.length ? (doneH / habits.length) * 100 : 0}%"></i></div></div>`
       : dEmpty('repeat', 'Nenhum hábito ainda', 'Comece com um pequeno e marque aqui todo dia.', dBtn('Criar seu primeiro hábito', 'data-action="open-form" data-key="habits"')),
     { link: dLink('habits', 'Hábitos'), cls: 'tallh' }));
   }
@@ -382,6 +391,8 @@ on('capture-open', openCaptureModal);
 on('focus-scroll', () => document.querySelector('.focus-timer')?.scrollIntoView({ block: 'center', behavior: 'smooth' }));
 
 on('cover', openCoverPicker);
+on('show-done-habits', () => { ui.showDoneHabits = true; bus.render(); });
+on('hide-done-habits', () => { ui.showDoneHabits = false; bus.render(); });
 
 // Captura rápida
 on('cap-mode', (ds) => { ui.capMode = ds.m; if (document.querySelector('.cap-modal')) openCaptureModal(); else { bus.render(); document.getElementById('cap-text')?.focus(); } });
