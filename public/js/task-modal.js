@@ -4,7 +4,17 @@ import { escapeHtml as esc, MONTHS_FULL } from './collections.js';
 import { icon } from './icons.js';
 import { ui, on, openOverlay, closeOverlay, toast, formHooks } from './ui.js';
 
-const PRIOS = ['Alta', 'Média', 'Baixa'];
+const PRIOS = [['Urgente', 4], ['Alta', 3], ['Média', 2], ['Baixa', 1]];
+const DOW = ['Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb', 'Dom'];
+const iso = (d) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+const prioKey = (p) => p.normalize('NFD').replace(/\p{M}/gu, '').toLowerCase();
+// Ícone de prioridade: alerta para urgente, barrinhas de sinal para as outras.
+const prioIcon = (p) => {
+  if (p === 'Urgente') return `<svg class="i" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 21a9 9 0 1 0 0-18 9 9 0 0 0 0 18zM12 8v5M12 16h.01"/></svg>`;
+  const lvl = (PRIOS.find((x) => x[0] === p) || [0, 0])[1];
+  if (!lvl) return '<span class="tkm-dash">—</span>';
+  return `<svg class="i bars" viewBox="0 0 24 24" aria-hidden="true">${[1, 2, 3].map((n) => `<rect x="${3 + (n - 1) * 7}" y="${20 - n * 5}" width="3.2" height="${n * 5}" rx="1" class="${n <= lvl ? 'f' : ''}"/>`).join('')}</svg>`;
+};
 let tm = null;
 
 const projectNames = () => [...items('personalProjects'), ...items('workProjects')].map((p) => p.title).filter(Boolean);
@@ -16,8 +26,8 @@ export function parseQuick(raw) {
   const out = {};
   const tags = [...text.matchAll(/\s#([\p{L}\d_-]+)/gu)].map((m) => m[1]);
   if (tags.length) { out.tags = tags; text = text.replace(/\s#[\p{L}\d_-]+/gu, ' '); }
-  const pr = text.match(/\s!(alta|m[eé]dia|baixa)(?=\s)/iu);
-  if (pr) { out.priority = { alta: 'Alta', baixa: 'Baixa' }[pr[1].toLowerCase()] || 'Média'; text = text.replace(pr[0], ' '); }
+  const pr = text.match(/\s!(urgente|alta|m[eé]dia|baixa)(?=\s)/iu);
+  if (pr) { out.priority = { alta: 'Alta', baixa: 'Baixa', urgente: 'Urgente' }[pr[1].toLowerCase()] || 'Média'; text = text.replace(pr[0], ' '); }
   const day = text.match(/\s(hoje|amanh[ãa])(?=\s)/iu);
   if (day) { out.due = /hoje/i.test(day[1]) ? today() : addDays(1); text = text.replace(day[0], ' '); }
   const hr = text.match(/\s(?:às\s)?([01]?\d|2[0-3])(?:h([0-5]\d)?|:([0-5]\d))(?=\s)/iu);
@@ -30,7 +40,7 @@ const fresh = (mode = 'task', d = {}) => ({
   mode, title: d.title || '', details: d.notes || '', showDetails: !!d.notes,
   due: d.due ?? (new Date().getHours() >= 18 ? addDays(1) : today()),
   time: d.time || '', priority: d.priority && d.priority !== 'Média' ? d.priority : '', project: d.project || '',
-  image: null, noteTitle: '', noteBody: '',
+  image: null, noteTitle: '', noteBody: '', pop: null, calY: null, calM: null,
 });
 
 export function openTaskModal(defaults = {}, mode = 'task') {
@@ -58,13 +68,12 @@ function render(focusSel) {
     <div class="tkm-opts">
       <button class="tkm-chip ${tm.due === T ? 'on' : ''}" data-action="tkm-day" data-d="${T}">${icon('calendar')}Hoje</button>
       <button class="tkm-chip ${tm.due === A ? 'on' : ''}" data-action="tkm-day" data-d="${A}">${icon('calendar')}Amanhã</button>
-      <label class="tkm-chip dashed ${other ? 'on' : ''}">${icon('calendar')}<span>${other ? shortDate(tm.due) : 'Outro dia…'}</span><input type="date" data-change="tkm-date" value="${other ? tm.due : ''}" aria-label="Outro dia"></label>
+      <span class="tkm-anchor"><button class="tkm-chip dashed ${other ? 'on' : ''}" data-action="tkm-pop" data-p="date" aria-expanded="${tm.pop === 'date'}">${icon('calendar')}<span>${other ? shortDate(tm.due) : 'Outro dia…'}</span></button>${tm.pop === 'date' ? calendarPop() : ''}</span>
       <label class="tkm-chip dashed ${tm.time ? 'on' : ''}">${icon('clock')}<span>${tm.time || 'Hora…'}</span><input type="time" data-change="tkm-time" value="${tm.time}" aria-label="Hora"></label>
-      <label class="tkm-chip plain prio ${tm.priority ? 'on p-' + tm.priority.normalize('NFD').replace(/\p{M}/gu, '').toLowerCase() : ''}"><span class="tkm-dash">${tm.priority ? '●' : '—'}</span><span>${tm.priority || 'Prioridade'}</span>
-        <select data-change="tkm-prio" aria-label="Prioridade"><option value="">Sem prioridade</option>${PRIOS.map((p) => `<option ${tm.priority === p ? 'selected' : ''}>${p}</option>`).join('')}</select></label>
+      <span class="tkm-anchor"><button class="tkm-chip plain prio ${tm.priority ? 'on p-' + prioKey(tm.priority) : ''}" data-action="tkm-pop" data-p="prio" aria-expanded="${tm.pop === 'prio'}">${prioIcon(tm.priority)}<span>${tm.priority || 'Prioridade'}</span></button>${tm.pop === 'prio' ? prioPop() : ''}</span>
     </div>`;
   openOverlay(`
-    <div class="modal tkm" role="dialog" aria-label="${note ? 'Nova nota' : 'Nova tarefa'}">
+    <div class="modal tkm ${tm.drawn ? 'still' : ''}" role="dialog" aria-label="${note ? 'Nova nota' : 'Nova tarefa'}">
       <div class="tkm-top">
         <div class="tkm-tabs" role="tablist">
           <button class="${note ? '' : 'on'}" role="tab" aria-selected="${!note}" data-action="tkm-mode" data-m="task">${icon('checkCircle')}Tarefa</button>
@@ -80,17 +89,66 @@ function render(focusSel) {
       <div class="tkm-foot">
         ${opts}
         <div class="tkm-bottom">
-          <label class="tkm-chip plain proj">${icon('inbox')}<span>${esc(tm.project || 'Inbox')}</span>
-            <select data-change="tkm-proj" aria-label="Projeto"><option value="">Inbox</option>${projects.map((p) => `<option ${tm.project === p ? 'selected' : ''}>${esc(p)}</option>`).join('')}</select></label>
+          <span class="tkm-anchor proj-a"><button class="tkm-chip plain proj" data-action="tkm-pop" data-p="proj" aria-expanded="${tm.pop === 'proj'}">${icon('inbox')}<span>${esc(tm.project || 'Inbox')}</span></button>${tm.pop === 'proj' ? projPop(projects) : ''}</span>
           <span class="tkm-keys"><kbd>⇧</kbd><kbd>↵</kbd> salvar e continuar</span>
           <button class="tkm-save" data-action="tkm-save" ${can ? '' : 'disabled'}>Salvar ${icon('enter')}</button>
         </div>
       </div>
     </div>`, (bd) => {
     bd.classList.add('tkm-backdrop');
+    if (tm.drawn) bd.classList.add('still');
+    tm.drawn = true;
     const f = bd.querySelector(focusSel || (note ? '#tkm-note-title' : '#tkm-title'));
-    if (f) { f.focus(); const n = f.value.length; f.setSelectionRange?.(n, n); }
+    if (f && !tm.pop) { f.focus(); const n = f.value.length; f.setSelectionRange?.(n, n); }
+    // Mantém o menu aberto dentro da tela.
+    const pop = bd.querySelector('.tkm-pop');
+    if (pop) {
+      const a = pop.parentElement.getBoundingClientRect(), w = pop.offsetWidth;
+      let left = 0;
+      if (a.left + w > innerWidth - 8) left = innerWidth - 8 - w - a.left;
+      if (a.left + left < 8) left = 8 - a.left;
+      pop.style.left = `${left}px`;
+    }
   });
+}
+
+const check = (on) => (on ? `<span class="tkm-ck">${icon('check')}</span>` : '');
+function prioPop() {
+  return `<div class="tkm-pop menu" role="menu">${PRIOS.map(([p]) => `<button role="menuitemradio" aria-checked="${tm.priority === p}" class="p-${prioKey(p)}" data-action="tkm-set-prio" data-v="${p}">${prioIcon(p)}<span>${p}</span>${check(tm.priority === p)}</button>`).join('')}
+    <button role="menuitemradio" aria-checked="${!tm.priority}" data-action="tkm-set-prio" data-v=""><span class="tkm-dash">—</span><span>Sem prioridade</span>${check(!tm.priority)}</button></div>`;
+}
+function projPop(projects) {
+  return `<div class="tkm-pop menu up" role="menu"><button role="menuitemradio" aria-checked="${!tm.project}" data-action="tkm-set-proj" data-v=""><span>Inbox (sem projeto)</span>${check(!tm.project)}</button>
+    ${projects.map((p) => `<button role="menuitemradio" aria-checked="${tm.project === p}" data-action="tkm-set-proj" data-v="${esc(p)}">${icon('folder')}<span>${esc(p)}</span>${check(tm.project === p)}</button>`).join('')}</div>`;
+}
+function calendarPop() {
+  const T = today();
+  const base = parseISO(tm.due || T);
+  if (tm.calY == null) { tm.calY = base.getFullYear(); tm.calM = base.getMonth(); }
+  const first = new Date(tm.calY, tm.calM, 1);
+  const start = new Date(first); start.setDate(1 - ((first.getDay() + 6) % 7));
+  const cells = [];
+  for (let k = 0; k < 42; k++) {
+    const d = new Date(start); d.setDate(start.getDate() + k);
+    const s = iso(d);
+    cells.push(`<button class="${d.getMonth() !== tm.calM ? 'out' : ''} ${s === T ? 'today' : ''} ${s === tm.due ? 'sel' : ''}" data-action="tkm-pick" data-d="${s}" aria-label="${shortDate(s)}">${d.getDate()}</button>`);
+  }
+  const now = new Date();
+  const endMonth = iso(new Date(now.getFullYear(), now.getMonth() + 1, 0));
+  const y0 = now.getFullYear();
+  return `<div class="tkm-pop tkm-calpop" role="dialog" aria-label="Escolher dia">
+    <div class="tkm-cal-head">
+      <button class="icon-btn" data-action="tkm-cal" data-n="-1" aria-label="Mês anterior">${icon('chevL')}</button>
+      <label class="tkm-sel strong"><span>${MONTHS_FULL[tm.calM]}</span>${icon('chevD')}<select data-change="tkm-cal-m" aria-label="Mês">${MONTHS_FULL.map((m, i) => `<option value="${i}" ${i === tm.calM ? 'selected' : ''}>${m}</option>`).join('')}</select></label>
+      <label class="tkm-sel"><span>${tm.calY}</span>${icon('chevD')}<select data-change="tkm-cal-y" aria-label="Ano">${[y0 - 1, y0, y0 + 1, y0 + 2, y0 + 3].map((y) => `<option ${y === tm.calY ? 'selected' : ''}>${y}</option>`).join('')}</select></label>
+      <button class="icon-btn" data-action="tkm-cal" data-n="1" aria-label="Próximo mês">${icon('chevR')}</button>
+    </div>
+    <div class="tkm-quick">
+      <button data-action="tkm-pick" data-d="${T}">Hoje</button><button data-action="tkm-pick" data-d="${addDays(1)}">Amanhã</button>
+      <button data-action="tkm-pick" data-d="${addDays(7)}">+7 dias</button><button data-action="tkm-pick" data-d="${endMonth}">Fim do mês</button>
+    </div>
+    <div class="tkm-grid">${DOW.map((d) => `<span>${d}</span>`).join('')}${cells.join('')}</div>
+  </div>`;
 }
 
 function parsedChips(q) {
@@ -121,10 +179,22 @@ on('tkm-note-body', (ds, el) => { tm.noteBody = el.value; refresh(); });
 on('tkm-mode', (ds) => { tm.mode = ds.m; render(); });
 on('tkm-show-details', () => { tm.showDetails = true; render('#tkm-details'); });
 on('tkm-day', (ds) => { tm.due = tm.due === ds.d ? '' : ds.d; render(); });
-on('tkm-date', (ds, el) => { tm.due = el.value; render(); });
+on('tkm-pop', (ds) => { tm.pop = tm.pop === ds.p ? null : ds.p; if (tm.pop === 'date') tm.calY = null; render(); });
+on('tkm-pick', (ds) => { tm.due = ds.d; tm.pop = null; render(); });
+on('tkm-cal', (ds) => { const d = new Date(tm.calY, tm.calM + +ds.n, 1); tm.calY = d.getFullYear(); tm.calM = d.getMonth(); render(); });
+on('tkm-cal-m', (ds, el) => { tm.calM = +el.value; render(); });
+on('tkm-cal-y', (ds, el) => { tm.calY = +el.value; render(); });
+on('tkm-set-prio', (ds) => { tm.priority = ds.v; tm.pop = null; render(); });
+on('tkm-set-proj', (ds) => { tm.project = ds.v; tm.pop = null; render(); });
+// Clique fora fecha o menu aberto; Esc fecha o menu antes da janela.
+document.addEventListener('mousedown', (e) => {
+  if (!tm?.pop || !e.target.closest('.tkm') || e.target.closest('.tkm-pop, [data-action="tkm-pop"]')) return;
+  tm.pop = null; render();
+});
+document.addEventListener('keydown', (e) => {
+  if (e.key === 'Escape' && tm?.pop && document.querySelector('.tkm')) { e.stopImmediatePropagation(); tm.pop = null; render(); }
+}, true);
 on('tkm-time', (ds, el) => { tm.time = el.value; render(); });
-on('tkm-prio', (ds, el) => { tm.priority = el.value; render(); });
-on('tkm-proj', (ds, el) => { tm.project = el.value; render(); });
 on('tkm-img-x', () => { tm.image = null; render(); });
 on('tkm-save', () => save(false));
 on('tkm-image', (ds, el) => {

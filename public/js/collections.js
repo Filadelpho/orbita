@@ -18,7 +18,7 @@ export const COLLECTIONS = {
       { name: 'title', label: 'Título', type: 'text', required: true, full: true },
       { name: 'due', label: 'Data', type: 'date', default: today },
       { name: 'time', label: 'Horário', type: 'time' },
-      { name: 'priority', label: 'Prioridade', type: 'select', options: ['Alta', 'Média', 'Baixa'], default: 'Média' },
+      { name: 'priority', label: 'Prioridade', type: 'select', options: ['Urgente', 'Alta', 'Média', 'Baixa'], default: 'Média' },
       { name: 'area', label: 'Área', type: 'select', options: AREAS },
       { name: 'project', label: 'Projeto', type: 'text' },
       { name: 'tags', label: 'Tags', type: 'text' },

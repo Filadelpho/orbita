@@ -1425,3 +1425,50 @@ kbd.rec { color: var(--accent); border-color: var(--accent); animation: pulse 1.
   .tkm-keys { display: none; }
   .tkm-chip.dashed { min-width: 0; }
 }
+
+/* Menus da janela de tarefa: calendário, prioridade e projeto */
+.tkm-anchor { position: relative; display: inline-flex; }
+.tkm-chip.dashed[aria-expanded="true"] { border-style: solid; border-color: var(--accent); }
+.tkm-pop { position: absolute; top: calc(100% + 8px); left: 0; z-index: 30; background: var(--bg-2); border: 1px solid var(--border-strong); border-radius: 14px; box-shadow: 0 18px 50px rgba(0, 0, 0, .55); animation: tkmPop .14s ease-out; }
+.tkm-pop.up { top: auto; bottom: calc(100% + 8px); }
+@keyframes tkmPop { from { opacity: 0; transform: translateY(-4px); } }
+.tkm-pop.menu { min-width: 190px; padding: 6px; display: flex; flex-direction: column; gap: 1px; }
+.tkm-pop.menu button { display: flex; align-items: center; gap: 10px; height: 36px; padding: 0 10px; border-radius: 9px; font-size: 13.5px; color: var(--text); text-align: left; white-space: nowrap; }
+.tkm-pop.menu button:hover { background: var(--surface-2); }
+.tkm-pop.menu button > span:not(.tkm-dash):not(.tkm-ck) { flex: 1; }
+.tkm-pop.menu svg.i { width: 16px; height: 16px; color: var(--text-2); flex: none; }
+.tkm-ck { display: grid; margin-left: 12px; }
+.tkm-ck svg.i { width: 15px !important; height: 15px !important; color: var(--text) !important; }
+.tkm-dash { width: 16px; text-align: center; color: var(--muted); flex: none; }
+svg.i.bars { stroke: none; }
+svg.i.bars rect { fill: currentColor; opacity: .3; }
+svg.i.bars rect.f { opacity: 1; }
+.p-urgente > svg.i { color: var(--danger) !important; }
+.tkm-chip.p-alta .tkm-dash, .tkm-chip.p-alta svg.i { color: var(--text); }
+.tkm-pop.tkm-calpop { width: 300px; padding: 12px; }
+.tkm-cal-head { display: flex; align-items: center; gap: 6px; margin-bottom: 10px; }
+.tkm-cal-head .icon-btn { width: 30px; height: 30px; }
+.tkm-cal-head .icon-btn svg.i { width: 16px; height: 16px; }
+.tkm-sel { position: relative; display: inline-flex; align-items: center; gap: 4px; height: 30px; padding: 0 6px; border-radius: 8px; font-size: 13.5px; color: var(--text-2); cursor: pointer; }
+.tkm-sel.strong { margin-left: auto; color: var(--text); font-weight: 700; }
+.tkm-sel + .tkm-sel { margin-right: auto; }
+.tkm-sel:hover { background: var(--surface); }
+.tkm-sel svg.i { width: 14px; height: 14px; }
+.tkm-sel select { position: absolute; inset: 0; opacity: 0; cursor: pointer; }
+.tkm-quick { display: flex; flex-wrap: wrap; gap: 6px; padding-bottom: 10px; margin-bottom: 8px; border-bottom: 1px solid var(--border); }
+.tkm-quick button { height: 26px; padding: 0 10px; border-radius: 99px; background: var(--surface-2); border: 1px solid var(--border); font-size: 12px; font-weight: 500; color: var(--text); }
+.tkm-quick button:hover { border-color: var(--accent); }
+.tkm-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 2px; }
+.tkm-grid span { text-align: center; font-size: 10.5px; font-weight: 600; letter-spacing: .04em; text-transform: uppercase; color: var(--muted); padding: 6px 0; }
+.tkm-grid button { height: 36px; border-radius: 50%; font-size: 13px; font-weight: 600; color: var(--text); border: 1px solid transparent; width: 36px; justify-self: center; }
+.tkm-grid button:hover { background: var(--surface-2); }
+.tkm-grid button.out { color: var(--muted); opacity: .55; font-weight: 500; }
+.tkm-grid button.today { border-color: var(--accent); color: var(--accent); }
+.tkm-grid button.sel { background: var(--accent); border-color: var(--accent); color: var(--on-accent, #fff); }
+@media (max-width: 600px) { .tkm-pop.tkm-calpop { width: min(300px, calc(100vw - 20px)); } .tkm-grid button { width: 34px; height: 34px; } }
+.tkm-quick { flex-wrap: nowrap; gap: 5px; }
+.tkm-quick button { padding: 0 9px; font-size: 11.5px; white-space: nowrap; }
+.tkm-chip.proj { margin-right: 0; max-width: 100%; }
+.tkm-anchor.proj-a { margin-right: auto; max-width: 55%; }
+.tkm-anchor.proj-a .tkm-chip { min-width: 0; }
+.modal.tkm.still, .backdrop.tkm-backdrop.still { animation: none; }

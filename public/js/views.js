@@ -262,7 +262,7 @@ function dashboard() {
       <div class="tlist">${list.map((t) => `
         <div class="trow"><button class="tcheck" data-action="toggle-done" data-key="tasks" data-id="${t.id}" aria-label="Concluir">${icon('check')}</button>
           <button class="ttitle" data-action="open-form" data-key="tasks" data-id="${t.id}">${esc(t.title)}</button>
-          ${t.due && t.due < T ? '<span class="tchip late">Atrasada</span>' : t.priority === 'Alta' ? '<span class="tchip high">Alta</span>' : t.time ? `<span class="tchip">${esc(t.time)}</span>` : ''}</div>`).join('')}</div>`
+          ${t.due && t.due < T ? '<span class="tchip late">Atrasada</span>' : (t.priority === 'Alta' || t.priority === 'Urgente') ? `<span class="tchip high">${t.priority}</span>` : t.time ? `<span class="tchip">${esc(t.time)}</span>` : ''}</div>`).join('')}</div>`
       : dEmpty('check', 'Tudo feito por aqui. 🎉', '', dBtn('Criar tarefa', 'data-action="open-form" data-key="tasks"')),
     { link: dLink('tasks', 'Tarefas') }));
   }
