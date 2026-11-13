@@ -7,6 +7,7 @@ import { ui, on, bus, openOverlay, closeOverlay, overlayOpen, toast, confirmDial
 import { PAGES, MODULE_INFO, moduleOn, go, integrationsBody, openCaptureModal } from './views.js';
 import { COVERS, COVER_KEYS } from './pixels.js';
 import { openCoverPicker, UNSPLASH } from './cover.js';
+import { habitList, habitDue } from './habits.js';
 
 export const APP_VERSION = '0.3.0';
 
@@ -329,7 +330,7 @@ function reminders() {
     { id: 'weekly', on: nc('weekly.on') && new Date().getDay() === +nc('weekly.day'), time: nc('weekly.time'), title: 'Revisão da semana', body: () => 'Que tal revisar a semana e escolher as prioridades da próxima?' },
     { id: 'workout', on: nc('workout.on') && moduleOn('health') && !items('workouts').some((w) => w.date === T), time: nc('workout.time'), title: 'Hora do treino 💪', body: () => 'Você ainda não registrou um treino hoje.' },
     { id: 'habits', on: nc('habits.on') && moduleOn('habits'), time: nc('habits.time'), title: 'Hábitos de hoje', body: () => {
-      const pend = items('habits').filter((h) => !h.log?.[T]).length;
+      const pend = habitList().filter((h) => habitDue(h, T) && !h.log?.[T]).length;
       return pend ? `Faltam ${pend} hábito(s) para fechar o dia.` : null; } },
     { id: 'bills', on: nc('bills.on') && moduleOn('finance'), time: '09:00', title: 'Contas a vencer', body: () => {
       const lim = addDays(+nc('bills.days'));

@@ -30,7 +30,7 @@ A tela de entrada, o Início e as Configurações seguem o layout do [NEXO](http
 |---|---|
 | **Início** | Dois estilos: com capa (pixels, Unsplash ou foto própria) e captura rápida, ou clássico (saudação e botões Personalizar, Iniciar foco e Capturar). Cartões em três seções: **Hoje** (humor e energia, hábitos, tarefas, agenda, tempo de foco), **Progresso** (metas, projetos em andamento, finanças, conteúdos, estudos) e **Ritmo** (foco por item, metas e conquistas, mosaico de tarefas concluídas, ritmo da semana em radar e o que seus dados mostram). |
 | **Tarefas e calendário** | Tarefas com prioridade, área, projeto e tags. Calendário mensal que reúne os outros módulos. Novo compromisso em uma janela de três colunas: título, pauta, duração, repetição e formato (Google Meet, link, presencial ou telefone), calendário do mês e horários livres do dia, com os ocupados marcados. |
-| **Hábitos e metas** | Hábitos com sequência de dias, metas com progresso e projetos pessoais em quadro com arrastar e soltar. |
+| **Hábitos e metas** | Hábitos com sugestões de um clique, grupos (ex.: “Alimentação” com vários hábitos dentro), hábito contínuo ou desafio com prazo (7 a 90 dias), frequência (todo dia, dias úteis ou vezes na semana), tempo por dia, meta vinculada, cor e sequência de dias. Metas com progresso e projetos pessoais em quadro com arrastar e soltar. |
 | **Trabalho e carreira** | Projetos e entregas em quadro, carreira, portfólio e certificações. |
 | **Educação** | Faculdade, programação, idiomas, cursos, certificações e leitura. |
 | **Finanças** | Receitas e despesas, orçamento por categoria, contas, investimentos, assinaturas e gráficos de 6 meses. |
@@ -71,6 +71,8 @@ public/
   js/settings.js     configurações, temas, atalhos e lembretes
   js/home.js         cartões de progresso e ritmo do Início
   js/event-modal.js  janela de novo compromisso
+  js/habit-modal.js  janela de novo hábito
+  js/habits.js       regras dos hábitos: grupos, frequência e desafios
   js/cover.js        capa do Início: animada, Unsplash ou foto própria
   js/pixels.js       fundo animado de pixels
   js/charts.js       gráficos em SVG

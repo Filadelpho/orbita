@@ -2,6 +2,7 @@
 // cruza dados entre módulos e gera relatórios. Roda 100% no dispositivo.
 import { state, items, upsert, today, addDays, iso, parseISO } from './store.js';
 import { brl, relDate, EXPENSE_CATS } from './collections.js';
+import { habitList, habitDue, streakOf } from './habits.js';
 
 const norm = (s) => s.toLowerCase().normalize('NFD').replace(/\p{Diacritic}/gu, '');
 
@@ -21,15 +22,10 @@ export function financeSummary(offset = 0) {
   return { income, expense, balance: income - expense, byCat, count: tx.length };
 }
 
-export function habitStreak(h) {
-  let n = 0;
-  let d = h.log?.[today()] ? today() : addDays(-1);
-  while (h.log?.[d]) { n++; d = addDays(-1, d); }
-  return n;
-}
+export const habitStreak = streakOf;
 
 export function weekHabitRate() {
-  const hs = items('habits');
+  const hs = habitList();
   if (!hs.length) return 0;
   let done = 0;
   for (const h of hs) for (let k = 0; k < 7; k++) if (h.log?.[addDays(-k)]) done++;
@@ -78,9 +74,9 @@ export function insights() {
   if (workouts.length >= 3) out.push({ kind: 'good', text: `Ótimo! ${workouts.length} treinos nos últimos 7 dias.` });
 
   const rate = weekHabitRate();
-  if (items('habits').length) out.push({ kind: rate >= 70 ? 'good' : 'info', text: `Consistência de hábitos na semana: ${rate}%.` });
+  if (habitList().length) out.push({ kind: rate >= 70 ? 'good' : 'info', text: `Consistência de hábitos na semana: ${rate}%.` });
 
-  const best = items('habits').map((h) => [h, habitStreak(h)]).sort((a, b) => b[1] - a[1])[0];
+  const best = habitList().map((h) => [h, habitStreak(h)]).sort((a, b) => b[1] - a[1])[0];
   if (best && best[1] >= 3) out.push({ kind: 'good', text: `Sequência de ${best[1]} dias em “${best[0].name}”. Não quebre a corrente!` });
 
   const goals = items('goals').filter((g) => g.deadline && g.deadline <= addDays(30) && (+g.progress || 0) < 80);
@@ -246,7 +242,7 @@ export function dayBriefing() {
   const tasks = items('tasks').filter((x) => !x.done && x.due === T);
   const overdue = items('tasks').filter((x) => !x.done && x.due && x.due < T);
   const events = items('events').filter((e) => e.date === T).sort((a, b) => (a.time || '').localeCompare(b.time || ''));
-  const habits = items('habits');
+  const habits = habitList();
   const pending = habits.filter((x) => !x.log?.[T]);
   let s = `${greet}${name ? ', ' + name : ''}! Aqui está seu dia:\n`;
   s += `\n**Agenda** — ${events.length ? events.map((e) => `${e.time || '--:--'} ${e.title}`).join(' · ') : 'nenhum compromisso'}`;
@@ -321,7 +317,7 @@ export function suggestions() {
   const s = [];
   const top = items('tasks').filter((t) => !t.done && t.due <= T).sort((a, b) => (a.priority === 'Alta' ? -1 : 1) - (b.priority === 'Alta' ? -1 : 1))[0];
   if (top) s.push(`Comece por **${top.title}** — é a tarefa mais importante pendente.`);
-  const h = items('habits').find((x) => !x.log?.[T]);
+  const h = habitList().find((x) => habitDue(x, T) && !x.log?.[T]);
   if (h) s.push(`Ainda dá tempo de marcar o hábito **${h.emoji || ''} ${h.name}** hoje.`);
   const study = items('studies').filter((x) => x.deadline && x.deadline >= T).sort((a, b) => a.deadline.localeCompare(b.deadline))[0];
   if (study) s.push(`Reserve 45 min para **${study.title}** — prazo ${relDate(study.deadline).toLowerCase()}.`);

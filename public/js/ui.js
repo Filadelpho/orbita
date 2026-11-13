@@ -119,7 +119,7 @@ function fieldInput(f, v) {
 export const formHooks = {};
 
 export function openForm(key, id = null, defaults = {}) {
-  if (!id && formHooks[key]) return formHooks[key](defaults);
+  if (formHooks[key] && formHooks[key](defaults, id) !== false) return;
   const cfg = COLLECTIONS[key];
   const item = id ? find(key, id) : { ...defaults };
   const title = id ? `Editar ${cfg.singular}` : `Novo(a) ${cfg.singular}`;

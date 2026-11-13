@@ -153,7 +153,7 @@ export function openEventModal(defaults = {}) {
     if (first) bd.querySelector('#evm-slots').scrollTop = first.offsetTop - bd.querySelector('#evm-slots').offsetTop - 4;
   });
 }
-formHooks.events = openEventModal;
+formHooks.events = (defaults, id) => (id ? false : openEventModal(defaults));
 
 // ---------- Ações ----------
 on('evm-title', (ds, el) => {

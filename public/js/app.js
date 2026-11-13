@@ -8,6 +8,8 @@ import { applyAppearance, dockPages as pinnedPages, quickAddMenu, handleShortcut
 import { mountDashCover } from './cover.js';
 import { startPixels } from './pixels.js';
 import './event-modal.js';
+import './habit-modal.js';
+import { habitList, habitDue } from './habits.js';
 
 const app = document.getElementById('app');
 
@@ -141,7 +143,7 @@ function notifications() {
   }
   if (moduleOn('calendar')) items('events').filter((e) => e.date === T).forEach((e) => out.push({ ico: 'calendar', cls: 'blue', text: `${e.time || 'Hoje'} · ${e.title}`, key: 'events', id: e.id }));
   if (moduleOn('habits')) {
-    const pend = items('habits').filter((h) => !h.log?.[T]);
+    const pend = habitList().filter((h) => habitDue(h, T) && !h.log?.[T]);
     if (pend.length && new Date().getHours() >= 18) out.push({ ico: 'repeat', cls: 'yellow', text: `${pend.length} hábito(s) ainda não concluído(s) hoje`, route: 'habits' });
   }
   return out;

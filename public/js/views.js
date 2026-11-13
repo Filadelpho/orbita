@@ -7,6 +7,7 @@ import { groupedBars, areaLine, ring, donut, PALETTE } from './charts.js';
 import { insights, financeSummary, habitStreak, weekHabitRate, avg, reply } from './ai.js';
 import { coverArt, openCoverPicker } from './cover.js';
 import { settingsPage } from './settings.js';
+import { habitList, habitTree, groupChildren, habitDue, challengeInfo, freqLabel } from './habits.js';
 import { dLink, dCard, dEmpty, dBtn, fmtMin, focusWeek, focusBars, focusItemsCard, projectsCard, achievementsCard, heatmapCard, rhythmCard, dataCard } from './home.js';
 
 // ---------- Páginas / navegação ----------
@@ -225,14 +226,22 @@ function dashboard() {
   }
 
   if (W.habits && M('habits')) {
-    const habits = items('habits');
+    const habits = habitList().filter((h) => habitDue(h, T));
     const doneH = habits.filter((h) => h.log?.[T]).length;
-    hoje.push(dCard('repeat', 'Hábitos de hoje', habits.length ? `
-      <div class="hlist">${habits.slice(0, 8).map((h) => `
-        <button class="hrow ${h.log?.[T] ? 'on' : ''}" data-action="toggle-habit" data-id="${h.id}" data-date="${T}">
-          <span class="emoji">${esc(h.emoji || '✨')}</span><span class="name">${esc(h.name)}</span>
-          ${habitStreak(h) ? `<span class="streak">🔥 ${habitStreak(h)}</span>` : ''}<span class="tick">${icon('check')}</span></button>`).join('')}</div>
-      <div class="hfoot"><span>${doneH} de ${habits.length} feitos hoje</span><div class="bar"><i style="width:${(doneH / habits.length) * 100}%"></i></div></div>`
+    const rows = habitTree().filter(({ h }) => h.group ? groupChildren(h).some((c) => habitDue(c, T)) : habitDue(h, T)).slice(0, 9);
+    hoje.push(dCard('repeat', 'Hábitos de hoje', rows.length ? `
+      <div class="hlist">${rows.map(({ h, depth }) => {
+        if (h.group) {
+          const kids = groupChildren(h).filter((c) => habitDue(c, T));
+          const n = kids.filter((c) => c.log?.[T]).length;
+          return `<button class="hrow group" data-action="open-form" data-key="habits" data-id="${h.id}" style="--hc:${esc(h.color || 'var(--accent)')}"><span class="emoji">${esc(h.emoji || '📁')}</span><span class="name">${esc(h.name)}</span><span class="gcount ${n === kids.length ? 'full' : ''}">${n}/${kids.length}</span></button>`;
+        }
+        const c = challengeInfo(h);
+        return `<button class="hrow ${h.log?.[T] ? 'on' : ''} ${depth ? 'child' : ''}" data-action="toggle-habit" data-id="${h.id}" data-date="${T}" style="--hc:${esc(h.color || 'var(--accent)')}">
+          <span class="emoji">${esc(h.emoji || '✨')}</span><span class="name">${esc(h.name)}${c ? `<small>Dia ${c.day} de ${c.total}</small>` : h.minutes ? `<small>${h.minutes} min</small>` : ''}</span>
+          ${habitStreak(h) ? `<span class="streak">🔥 ${habitStreak(h)}</span>` : ''}<span class="tick">${icon('check')}</span></button>`;
+      }).join('')}</div>
+      <div class="hfoot"><span>${doneH} de ${habits.length} feitos hoje</span><div class="bar"><i style="width:${habits.length ? (doneH / habits.length) * 100 : 0}%"></i></div></div>`
       : dEmpty('repeat', 'Nenhum hábito ainda', 'Comece com um pequeno e marque aqui todo dia.', dBtn('Criar seu primeiro hábito', 'data-action="open-form" data-key="habits"')),
     { link: dLink('habits', 'Hábitos'), cls: 'tallh' }));
   }
@@ -468,7 +477,7 @@ on('focus-pick', () => {
   if (ui.focus) return;
   const opts = [
     ['Tarefas', items('tasks').filter((t) => !t.done).sort(COLLECTIONS.tasks.sort).slice(0, 12).map((t) => t.title)],
-    ['Hábitos', items('habits').map((h) => h.name)],
+    ['Hábitos', habitList().map((h) => h.name)],
     ['Projetos', [...items('personalProjects'), ...items('workProjects')].filter((p) => !['Concluído', 'Entregue'].includes(p.status)).map((p) => p.title)],
   ].filter(([, l]) => l.length);
   openOverlay(`<div class="modal"><div class="modal-head"><h3>Iniciar foco</h3><button class="icon-btn" data-action="close-overlay" aria-label="Fechar">${icon('x')}</button></div>
@@ -513,7 +522,7 @@ on('toggle-widget', (ds, el) => { state.settings.widgets[ds.w] = el.checked; sav
 
 // ---------- Hábitos ----------
 function habitsPage() {
-  const hs = items('habits');
+  const hs = habitList();
   const days = [];
   for (let k = -6; k <= 0; k++) days.push(addDays(k));
   const T = today();
@@ -530,11 +539,20 @@ function habitsPage() {
     </div>
     <div class="card" style="padding:12px;overflow-x:auto">
       <div class="habit-row head"><span>Hábito</span>${days.map((d) => `<span style="text-align:center">${WEEKDAYS[parseISO(d).getDay()]}<br>${parseISO(d).getDate()}</span>`).join('')}<span class="streak-h" style="text-align:right">Sequência</span></div>
-      ${hs.map((h) => {
+      ${habitTree().map(({ h, depth }) => {
+        if (h.group) {
+          const kids = groupChildren(h);
+          return `<div class="habit-row group" style="--hc:${esc(h.color || 'var(--accent)')}">
+          <div class="name" data-action="open-form" data-key="habits" data-id="${h.id}" style="cursor:pointer"><span class="emoji">${esc(h.emoji || '📁')}</span><div style="min-width:0"><div class="hname">${esc(h.name)}</div><small class="muted">Grupo · ${kids.length} ${kids.length === 1 ? 'hábito' : 'hábitos'}</small></div></div>
+          ${days.map((d) => { const due = kids.filter((c) => habitDue(c, d)); const n = due.filter((c) => c.log?.[d]).length; return `<span class="hgroup-day ${due.length && n === due.length ? 'full' : ''}">${due.length ? `${n}/${due.length}` : ''}</span>`; }).join('')}
+          <span class="streak"></span></div>`;
+        }
         const weekCount = days.filter((d) => h.log?.[d]).length;
-        return `<div class="habit-row">
-          <div class="name" data-action="open-form" data-key="habits" data-id="${h.id}" style="cursor:pointer"><span class="emoji">${esc(h.emoji || '✨')}</span><div style="min-width:0"><div style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${esc(h.name)}</div><small class="muted">${weekCount}/${h.target || 7} na semana</small></div></div>
-          ${days.map((d) => `<button class="hday ${h.log?.[d] ? 'on' : ''} ${d === T ? 'today' : ''}" data-action="toggle-habit" data-id="${h.id}" data-date="${d}" aria-label="${d}">${icon('check')}</button>`).join('')}
+        const c = challengeInfo(h);
+        const sub = c ? (c.over ? `Desafio concluído · ${c.total} dias` : `Desafio · dia ${c.day} de ${c.total}`) : `${weekCount}/${h.target || 7} na semana · ${freqLabel(h)}${h.minutes ? ` · ${h.minutes} min` : ''}`;
+        return `<div class="habit-row ${depth ? 'child' : ''}" style="--hc:${esc(h.color || 'var(--accent)')}">
+          <div class="name" data-action="open-form" data-key="habits" data-id="${h.id}" style="cursor:pointer"><span class="emoji">${esc(h.emoji || '✨')}</span><div style="min-width:0"><div class="hname">${esc(h.name)}</div><small class="muted">${sub}</small></div></div>
+          ${days.map((d) => `<button class="hday ${h.log?.[d] ? 'on' : ''} ${d === T ? 'today' : ''} ${habitDue(h, d) ? '' : 'off'}" data-action="toggle-habit" data-id="${h.id}" data-date="${d}" aria-label="${d}">${icon('check')}</button>`).join('')}
           <span class="streak">${habitStreak(h) ? '🔥 ' + habitStreak(h) + ' dias' : '—'}</span></div>`;
       }).join('') || emptyState('repeat', 'Nenhum hábito ainda. Comece com algo pequeno, como beber água.')}
     </div>

@@ -4,6 +4,7 @@ import { escapeHtml as esc, MONTHS_FULL } from './collections.js';
 import { icon } from './icons.js';
 import { ui, on, bus } from './ui.js';
 import { insights } from './ai.js';
+import { habitList } from './habits.js';
 
 // ---------- Peças dos cartões ----------
 export const dLink = (route, label) => `<a class="dcard-link" href="#/${route}">${esc(label)}${icon('arrowUpRight')}</a>`;
@@ -39,7 +40,7 @@ function streak(isActive) {
 }
 const activeDay = (d) => {
   if (doneByDay()[d]) return true;
-  if (items('habits').some((h) => h.log?.[d])) return true;
+  if (habitList().some((h) => h.log?.[d])) return true;
   if (items('moods').some((m) => m.date === d)) return true;
   return items('focus').some((f) => f.date === d);
 };
@@ -104,15 +105,15 @@ function achievements() {
   const doneTotal = Object.values(dbd).reduce((a, b) => a + b, 0);
   const doneWeek = week.reduce((s, d) => s + (dbd[d] || 0), 0);
   const st = streak(activeDay);
-  const checks = items('habits').reduce((s, h) => s + Object.keys(h.log || {}).length, 0);
-  const checksWeek = items('habits').reduce((s, h) => s + week.filter((d) => h.log?.[d]).length, 0);
+  const checks = habitList().reduce((s, h) => s + Object.keys(h.log || {}).length, 0);
+  const checksWeek = habitList().reduce((s, h) => s + week.filter((d) => h.log?.[d]).length, 0);
   const focusH = Math.floor(items('focus').reduce((s, f) => s + (+f.minutes || 0), 0) / 60);
   return [
     { id: 'tasks', label: 'Produtividade', emoji: '✅', value: doneWeek, unit: doneWeek === 1 ? 'tarefa na semana' : 'tarefas na semana', marks: week.map((d) => !!dbd[d]),
       total: doneTotal, mile: next(MILESTONES.tasks, doneTotal), quote: 'Uma tarefa riscada por vez já é progresso de verdade.' },
     { id: 'streak', label: 'Constância', emoji: '🚀', value: st, unit: st === 1 ? 'dia seguido' : 'dias seguidos', marks: week.map(activeDay),
       total: st, mile: next(MILESTONES.streak, st), quote: 'Aparecer todo dia vale mais do que um dia perfeito.' },
-    { id: 'habits', label: 'Hábitos', emoji: '🔁', value: checksWeek, unit: checksWeek === 1 ? 'check-in na semana' : 'check-ins na semana', marks: week.map((d) => items('habits').some((h) => h.log?.[d])),
+    { id: 'habits', label: 'Hábitos', emoji: '🔁', value: checksWeek, unit: checksWeek === 1 ? 'check-in na semana' : 'check-ins na semana', marks: week.map((d) => habitList().some((h) => h.log?.[d])),
       total: checks, mile: next(MILESTONES.habits, checks), quote: 'Hábitos pequenos, repetidos, mudam a semana inteira.' },
     { id: 'focus', label: 'Foco', emoji: '🎯', value: focusH, unit: focusH === 1 ? 'hora de foco no total' : 'horas de foco no total', marks: week.map((d) => items('focus').some((f) => f.date === d)),
       total: focusH, mile: next(MILESTONES.focus, focusH), quote: 'Vinte e cinco minutos de atenção inteira rendem mais do que uma tarde distraída.' },
