@@ -532,43 +532,80 @@ on('toggle-widget', (ds, el) => { state.settings.widgets[ds.w] = el.checked; sav
 
 
 // ---------- Hábitos ----------
+const HDAYS = 28;
+const deDate = (d) => { const x = parseISO(d); return `${x.getDate()} de ${monthShort(x.getMonth())}.`; };
 function habitsPage() {
   const hs = habitList();
-  const days = [];
-  for (let k = -6; k <= 0; k++) days.push(addDays(k));
   const T = today();
-  const last30 = [];
-  for (let k = -29; k <= 0; k++) {
-    const d = addDays(k);
-    last30.push(hs.length ? Math.round((hs.filter((h) => h.log?.[d]).length / hs.length) * 100) : 0);
-  }
-  return head('Hábitos e rotina', 'Pequenas ações diárias, grandes resultados. Toque nos dias para marcar.', addBtn('habits', 'Novo hábito')) + `
-    <div class="summary-row">
-      <div class="card"><div class="stat"><span class="label">Hoje</span><span class="value">${hs.filter((h) => h.log?.[T]).length}/${hs.length}</span></div></div>
-      <div class="card"><div class="stat"><span class="label">Consistência (7 dias)</span><span class="value">${weekHabitRate()}%</span></div></div>
-      <div class="card"><div class="stat"><span class="label">Maior sequência atual</span><span class="value">🔥 ${Math.max(0, ...hs.map(habitStreak))}</span></div></div>
+  const days = [];
+  for (let k = -(HDAYS - 1); k <= 0; k++) days.push(addDays(k));
+  const dueToday = hs.filter((h) => habitDue(h, T));
+  let due = 0, done = 0;
+  days.forEach((d) => hs.forEach((h) => { if (habitDue(h, d)) { due++; if (h.log?.[d]) done++; } }));
+  const rate = due ? Math.round((done / due) * 100) : 0;
+  const best = hs.reduce((m, h) => (habitStreak(h) > (m ? habitStreak(m) : 0) ? h : m), null);
+  const bestN = best ? habitStreak(best) : 0;
+  const stat = (label, value, ico, sub = '') => `<div class="hb-stat"><div class="hb-stat-top"><span>${label}</span>${icon(ico)}</div><b>${value}</b>${sub ? `<small>${esc(sub)}</small>` : ''}</div>`;
+  const cells = (h) => days.map((d) => `<button class="hb-cell ${h.log?.[d] ? 'on' : ''} ${d === T ? 'today' : ''} ${habitDue(h, d) ? '' : 'off'}" data-action="toggle-habit" data-id="${h.id}" data-date="${d}" title="${fmtDate(d)}" aria-label="${fmtDate(d)}"></button>`).join('');
+  const row = ({ h, depth }) => {
+    const color = esc(h.color || 'var(--accent)');
+    const grip = `<span class="hb-grip" title="Arraste para reordenar">${icon('grip')}</span>`;
+    if (h.group) {
+      const kids = groupChildren(h);
+      const kd = kids.filter((c) => habitDue(c, T));
+      const n = kd.filter((c) => c.log?.[T]).length;
+      return `<div class="hb-row group" draggable="true" data-hid="${h.id}" style="--hc:${color}">${grip}
+        <span class="hb-emoji">${esc(h.emoji || '📁')}</span>
+        <div class="hb-info" data-action="open-form" data-key="habits" data-id="${h.id}"><div class="hb-name">${esc(h.name)}</div><small>Grupo · ${kids.length} ${kids.length === 1 ? 'hábito' : 'hábitos'}</small></div>
+        <span class="hb-gcount ${kd.length && n === kd.length ? 'full' : ''}">${n}/${kd.length} hoje</span></div>`;
+    }
+    const c = challengeInfo(h);
+    let meta;
+    if (c) {
+      const cd = Object.keys(h.log || {}).filter((d) => d >= h.start && d <= c.end).length;
+      const pct = Math.round((cd / c.total) * 100);
+      meta = `<div class="hb-prog"><span class="hb-bar"><i style="width:${pct}%"></i></span><small>${cd}/${c.total} dias (${pct}%) · ${c.over ? 'encerrado' : 'até ' + deDate(c.end)}</small></div>`;
+    } else meta = `<small>${freqLabel(h)}${h.minutes ? ` · ${h.minutes} min` : ''}</small>`;
+    const badge = c ? `<span class="hb-badge">${icon('trophy')}Desafio ${c.total}d</span>` : '';
+    const st = habitStreak(h);
+    const on = !!h.log?.[T];
+    return `<div class="hb-row ${depth ? 'child' : ''}" draggable="true" data-hid="${h.id}" style="--hc:${color}">${grip}
+      <button class="hb-check ${on ? 'on' : ''} ${habitDue(h, T) ? '' : 'off'}" data-action="toggle-habit" data-id="${h.id}" data-date="${T}" aria-label="Marcar hoje">${on ? icon('check') : (h.emoji && h.emoji !== '✨' ? `<span>${esc(h.emoji)}</span>` : '')}</button>
+      <div class="hb-info" data-action="open-form" data-key="habits" data-id="${h.id}"><div class="hb-title"><span class="hb-name">${esc(h.name)}</span>${badge}</div>${meta}</div>
+      <div class="hb-cells">${cells(h)}</div>
+      <span class="hb-streak ${st ? 'hot' : ''}">${icon('flame')}${st}</span></div>`;
+  };
+  return `
+    <div class="hb-head">
+      <div><div class="hb-h1"><span class="hb-hico">${icon('repeat')}</span><h1>Hábitos</h1></div><p>Consistência > intensidade. Últimos ${HDAYS} dias.</p></div>
+      ${addBtn('habits', 'Novo hábito')}
     </div>
-    <div class="card" style="padding:12px;overflow-x:auto">
-      <div class="habit-row head"><span>Hábito</span>${days.map((d) => `<span style="text-align:center">${WEEKDAYS[parseISO(d).getDay()]}<br>${parseISO(d).getDate()}</span>`).join('')}<span class="streak-h" style="text-align:right">Sequência</span></div>
-      ${habitTree().map(({ h, depth }) => {
-        if (h.group) {
-          const kids = groupChildren(h);
-          return `<div class="habit-row group" style="--hc:${esc(h.color || 'var(--accent)')}">
-          <div class="name" data-action="open-form" data-key="habits" data-id="${h.id}" style="cursor:pointer"><span class="emoji">${esc(h.emoji || '📁')}</span><div style="min-width:0"><div class="hname">${esc(h.name)}</div><small class="muted">Grupo · ${kids.length} ${kids.length === 1 ? 'hábito' : 'hábitos'}</small></div></div>
-          ${days.map((d) => { const due = kids.filter((c) => habitDue(c, d)); const n = due.filter((c) => c.log?.[d]).length; return `<span class="hgroup-day ${due.length && n === due.length ? 'full' : ''}">${due.length ? `${n}/${due.length}` : ''}</span>`; }).join('')}
-          <span class="streak"></span></div>`;
-        }
-        const weekCount = days.filter((d) => h.log?.[d]).length;
-        const c = challengeInfo(h);
-        const sub = c ? (c.over ? `Desafio concluído · ${c.total} dias` : `Desafio · dia ${c.day} de ${c.total}`) : `${weekCount}/${h.target || 7} na semana · ${freqLabel(h)}${h.minutes ? ` · ${h.minutes} min` : ''}`;
-        return `<div class="habit-row ${depth ? 'child' : ''}" style="--hc:${esc(h.color || 'var(--accent)')}">
-          <div class="name" data-action="open-form" data-key="habits" data-id="${h.id}" style="cursor:pointer"><span class="emoji">${esc(h.emoji || '✨')}</span><div style="min-width:0"><div class="hname">${esc(h.name)}</div><small class="muted">${sub}</small></div></div>
-          ${days.map((d) => `<button class="hday ${h.log?.[d] ? 'on' : ''} ${d === T ? 'today' : ''} ${habitDue(h, d) ? '' : 'off'}" data-action="toggle-habit" data-id="${h.id}" data-date="${d}" aria-label="${d}">${icon('check')}</button>`).join('')}
-          <span class="streak">${habitStreak(h) ? '🔥 ' + habitStreak(h) + ' dias' : '—'}</span></div>`;
-      }).join('') || emptyState('repeat', 'Nenhum hábito ainda. Comece com algo pequeno, como beber água.')}
+    <div class="hb-stats">
+      ${stat('Hoje', `${dueToday.filter((h) => h.log?.[T]).length}/${dueToday.length}`, 'check')}
+      ${stat(`Taxa em ${HDAYS} dias`, `${rate}%`, 'repeat')}
+      ${stat('Maior sequência', `${bestN} ${bestN === 1 ? 'dia' : 'dias'}`, 'trophy', bestN ? best.name : '')}
     </div>
-    <div class="card" style="margin-top:16px">${cardHead('chart', 'Últimos 30 dias (% de hábitos concluídos)')}${areaLine(last30, { height: 120, min: 0, max: 100, dots: false })}</div>`;
+    <div class="hb-list">
+      ${habitTree().map(row).join('') || emptyState('repeat', 'Nenhum hábito ainda. Comece com algo pequeno, como beber água.')}
+    </div>`;
 }
+
+// Arrastar para reordenar hábitos
+let habitDrag = null;
+document.addEventListener('dragstart', (e) => { const r = e.target.closest?.('.hb-row'); if (!r) return; habitDrag = r.dataset.hid; r.classList.add('dragging'); e.dataTransfer.effectAllowed = 'move'; });
+document.addEventListener('dragend', (e) => { e.target.closest?.('.hb-row')?.classList.remove('dragging'); habitDrag = null; });
+document.addEventListener('dragover', (e) => { if (habitDrag && e.target.closest?.('.hb-row')) e.preventDefault(); });
+document.addEventListener('drop', (e) => {
+  const r = e.target.closest?.('.hb-row');
+  if (!r || !habitDrag) return;
+  e.preventDefault();
+  const arr = items('habits');
+  const from = arr.findIndex((h) => h.id === habitDrag), to = arr.findIndex((h) => h.id === r.dataset.hid);
+  habitDrag = null;
+  if (from < 0 || to < 0 || from === to) return;
+  arr.splice(to, 0, arr.splice(from, 1)[0]);
+  save();
+});
 
 // ---------- Calendário ----------
 function calendarEntries(date) {
