@@ -150,14 +150,16 @@ on('hbm-save', () => {
   toast(hb.id ? 'Hábito atualizado' : hb.group ? `Grupo “${name}” criado` : hb.mode === 'challenge' ? `Desafio de ${hb.days} dias começou` : 'Hábito criado');
   hb = null;
 });
-on('hbm-delete', async () => {
-  const h = find('habits', hb.id);
+// Exclui um hábito (ou grupo) depois de confirmar; os hábitos de um grupo ficam soltos.
+export async function deleteHabit(id) {
+  const h = find('habits', id);
   if (!h) return;
-  closeOverlay();
   const kids = items('habits').filter((x) => x.parent === h.id);
-  if (await confirmDialog(`Excluir ${h.group ? 'grupo' : 'hábito'}?`, h.group && kids.length ? `Os ${kids.length} hábitos dentro dele continuam, só que fora do grupo.` : 'O histórico de dias marcados também será apagado.')) {
+  if (await confirmDialog(`Excluir ${h.group ? 'grupo' : 'hábito'} “${h.name}”?`, h.group && kids.length ? `Os ${kids.length} hábitos dentro dele continuam, só que fora do grupo.` : 'O histórico de dias marcados também será apagado.')) {
     kids.forEach((k) => upsert('habits', { id: k.id, parent: null }));
     remove('habits', h.id);
-    toast('Excluído');
+    toast('Hábito excluído');
   }
-});
+}
+on('hbm-delete', () => { const id = hb?.id; closeOverlay(); deleteHabit(id); });
+on('habit-delete', (ds) => deleteHabit(ds.id));

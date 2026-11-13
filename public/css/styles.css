@@ -1358,3 +1358,10 @@ kbd.rec { color: var(--accent); border-color: var(--accent); animation: pulse 1.
   .hb-row.child .hb-how { margin-left: 25px; }
   .hb-how-input { min-width: 100%; }
 }
+.hb-tools { display: flex; gap: 2px; flex: none; opacity: 0; transition: opacity .15s; }
+.hb-row:hover .hb-tools, .hb-tools:focus-within { opacity: 1; }
+.hb-tools .icon-btn { width: 30px; height: 30px; }
+.hb-tools .icon-btn svg.i { width: 15px; height: 15px; }
+.hb-tools .icon-btn.danger:hover { color: var(--danger); }
+.hb-gcount + .hb-tools { margin-left: 0; }
+@media (hover: none), (max-width: 600px) { .hb-tools { opacity: 1; } }

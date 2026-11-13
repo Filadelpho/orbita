@@ -550,6 +550,7 @@ function habitsPage() {
   const row = ({ h, depth }) => {
     const color = esc(h.color || 'var(--accent)');
     const grip = `<span class="hb-grip" title="Arraste para reordenar">${icon('grip')}</span>`;
+    const tools = `<span class="hb-tools"><button class="icon-btn" data-action="open-form" data-key="habits" data-id="${h.id}" title="Editar" aria-label="Editar ${esc(h.name)}">${icon('edit')}</button><button class="icon-btn danger" data-action="habit-delete" data-id="${h.id}" title="Excluir" aria-label="Excluir ${esc(h.name)}">${icon('trash')}</button></span>`;
     if (h.group) {
       const kids = groupChildren(h);
       const kd = kids.filter((c) => habitDue(c, T));
@@ -557,7 +558,7 @@ function habitsPage() {
       return `<div class="hb-row group" draggable="true" data-hid="${h.id}" style="--hc:${color}">${grip}
         <span class="hb-emoji">${esc(h.emoji || '📁')}</span>
         <div class="hb-info" data-action="open-form" data-key="habits" data-id="${h.id}"><div class="hb-name">${esc(h.name)}</div><small>Grupo · ${kids.length} ${kids.length === 1 ? 'hábito' : 'hábitos'}</small></div>
-        <span class="hb-gcount ${kd.length && n === kd.length ? 'full' : ''}">${n}/${kd.length} hoje</span></div>`;
+        <span class="hb-gcount ${kd.length && n === kd.length ? 'full' : ''}">${n}/${kd.length} hoje</span>${tools}</div>`;
     }
     const c = challengeInfo(h);
     let meta;
@@ -573,7 +574,7 @@ function habitsPage() {
       <button class="hb-check ${on ? 'on' : ''} ${habitDue(h, T) ? '' : 'off'}" data-action="toggle-habit" data-id="${h.id}" data-date="${T}" aria-label="Marcar hoje">${on ? icon('check') : (h.emoji && h.emoji !== '✨' ? `<span>${esc(h.emoji)}</span>` : '')}</button>
       <div class="hb-info" data-action="open-form" data-key="habits" data-id="${h.id}"><div class="hb-title"><span class="hb-name">${esc(h.name)}</span>${badge}</div>${meta}</div>
       <div class="hb-cells">${cells(h)}</div>
-      <span class="hb-streak ${st ? 'hot' : ''}">${icon('flame')}${st}</span>${on ? howToday(h, T) : ''}</div>`;
+      <span class="hb-streak ${st ? 'hot' : ''}">${icon('flame')}${st}</span>${tools}${on ? howToday(h, T) : ''}</div>`;
   };
   return `
     <div class="hb-head">
