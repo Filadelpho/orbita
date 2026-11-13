@@ -573,7 +573,7 @@ function habitsPage() {
       <button class="hb-check ${on ? 'on' : ''} ${habitDue(h, T) ? '' : 'off'}" data-action="toggle-habit" data-id="${h.id}" data-date="${T}" aria-label="Marcar hoje">${on ? icon('check') : (h.emoji && h.emoji !== '✨' ? `<span>${esc(h.emoji)}</span>` : '')}</button>
       <div class="hb-info" data-action="open-form" data-key="habits" data-id="${h.id}"><div class="hb-title"><span class="hb-name">${esc(h.name)}</span>${badge}</div>${meta}</div>
       <div class="hb-cells">${cells(h)}</div>
-      <span class="hb-streak ${st ? 'hot' : ''}">${icon('flame')}${st}</span></div>`;
+      <span class="hb-streak ${st ? 'hot' : ''}">${icon('flame')}${st}</span>${on ? howToday(h, T) : ''}</div>`;
   };
   return `
     <div class="hb-head">
@@ -589,6 +589,26 @@ function habitsPage() {
       ${habitTree().map(row).join('') || emptyState('repeat', 'Nenhum hábito ainda. Comece com algo pequeno, como beber água.')}
     </div>`;
 }
+
+// "Como foi hoje?" aparece depois de marcar o hábito do dia
+function howToday(h, T) {
+  const n = h.notes?.[T] || {};
+  const open = n.s === 'warn' || n.c || ui.hbComment === h.id;
+  const chip = (v, ico, label) => `<button class="hb-how-chip ${v} ${n.s === v ? 'on' : ''}" data-action="habit-how" data-id="${h.id}" data-v="${v}">${ico} ${label}</button>`;
+  return `<div class="hb-how"><span>Como foi hoje?</span>${chip('ok', '✅', 'Tudo certo')}${chip('warn', '⚠️', 'Com ressalvas')}
+    ${open ? `<input class="hb-how-input" data-hb-note="${h.id}" data-change="habit-note" data-id="${h.id}" value="${esc(n.c || '')}" placeholder="Ex.: visitei minha avó, mas saí mais cedo" maxlength="200">`
+      : `<button class="hb-how-add" data-action="habit-comment" data-id="${h.id}">+ comentário</button>`}</div>`;
+}
+const habitNote = (id) => { const h = find('habits', id); if (!h) return {}; h.notes ||= {}; return (h.notes[today()] ||= {}); };
+const focusNote = (id) => setTimeout(() => document.querySelector(`[data-hb-note="${id}"]`)?.focus(), 30);
+on('habit-how', (ds) => {
+  const n = habitNote(ds.id);
+  n.s = n.s === ds.v ? undefined : ds.v;
+  save();
+  if (n.s === 'warn' && !n.c) focusNote(ds.id);
+});
+on('habit-comment', (ds) => { ui.hbComment = ds.id; bus.render(); focusNote(ds.id); });
+on('habit-note', (ds, el) => { habitNote(ds.id).c = el.value.trim(); ui.hbComment = null; save(); toast('Comentário salvo'); });
 
 // Arrastar para reordenar hábitos
 let habitDrag = null;

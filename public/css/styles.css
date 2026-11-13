@@ -1341,3 +1341,20 @@ kbd.rec { color: var(--accent); border-color: var(--accent); animation: pulse 1.
   .hb-cells { order: 5; width: 100%; grid-template-columns: repeat(14, 1fr); padding-left: 25px; }
   .hb-cell { width: auto; aspect-ratio: 1; height: auto; }
 }
+.hb-row { flex-wrap: wrap; }
+.hb-check.on { border-radius: 10px; }
+.hb-how { flex-basis: 100%; display: flex; align-items: center; flex-wrap: wrap; gap: 8px; margin: -2px 0 0 71px; font-size: 12.5px; color: var(--muted); }
+.hb-row.child .hb-how { margin-left: 71px; }
+.hb-how-chip, .hb-how-add { display: inline-flex; align-items: center; gap: 6px; height: 28px; padding: 0 10px; border-radius: 8px; border: 1px solid var(--border-strong); background: var(--bg); color: var(--text); font-size: 12.5px; transition: border-color .15s, background .15s; }
+.hb-how-chip:hover { border-color: var(--text-2); }
+.hb-how-chip.ok.on { border-color: var(--success); background: color-mix(in srgb, var(--success) 14%, transparent); }
+.hb-how-chip.warn.on { border-color: var(--warning); background: color-mix(in srgb, var(--warning) 14%, transparent); }
+.hb-how-add { border-color: transparent; background: none; color: var(--text-2); padding: 0 6px; }
+.hb-how-add:hover { color: var(--text); }
+.hb-how-input { flex: 1; min-width: 180px; height: 32px; padding: 0 12px; border-radius: 9px; border: 1px solid var(--border-strong); background: var(--bg); color: var(--text); font: inherit; font-size: 13px; outline: 0; }
+.hb-how-input:focus { border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-soft); }
+@media (max-width: 600px) {
+  .hb-how { order: 6; margin-left: 25px; }
+  .hb-row.child .hb-how { margin-left: 25px; }
+  .hb-how-input { min-width: 100%; }
+}
