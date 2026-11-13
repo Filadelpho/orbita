@@ -1,5 +1,5 @@
 // Infra de UI: estado de navegação, ações delegadas, modais, toasts e formulários.
-import { state, upsert, find, remove } from './store.js';
+import { state, upsert, find, remove, today } from './store.js';
 import { COLLECTIONS, escapeHtml as esc } from './collections.js';
 import { icon } from './icons.js';
 
@@ -171,7 +171,9 @@ on('toggle-done', (ds) => {
   const cfg = COLLECTIONS[ds.key];
   const it = find(ds.key, ds.id);
   if (!it) return;
-  upsert(ds.key, { id: it.id, [cfg.done]: !it[cfg.done] });
+  const val = !it[cfg.done];
+  // Guarda o dia da conclusão para o mosaico e o ritmo da semana no Início.
+  upsert(ds.key, { id: it.id, [cfg.done]: val, ...(ds.key === 'tasks' ? { doneAt: val ? today() : null } : {}) });
 });
 
 export const cap = (s) => s.charAt(0).toUpperCase() + s.slice(1);

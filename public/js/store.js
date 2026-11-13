@@ -25,7 +25,7 @@ export const ALL_MODULES = [
 export const DEFAULT_SETTINGS = {
   theme: 'dark',
   modules: Object.fromEntries(ALL_MODULES.map((m) => [m, true])),
-  widgets: { mood: true, habits: true, tasks: true, events: true, finance: true, focus: true, goals: true, ai: true, content: true, studies: true },
+  widgets: { mood: true, habits: true, tasks: true, events: true, finance: true, focus: true, goals: true, ai: true, content: true, studies: true, projects: true, focusItems: true, achievements: true, heatmap: true, rhythm: true },
   cover: 'orbita',
   budgets: {
     'Alimentação': 1400, 'Moradia': 2200, 'Transporte': 450, 'Lazer': 500,
@@ -122,9 +122,21 @@ export function seed() {
     { title: 'Agendar check-up anual', due: addDays(-1), priority: 'Média', area: 'Saúde' },
     { title: 'Comprar presente de aniversário', due: addDays(1), priority: 'Baixa', area: 'Pessoal' },
     { title: 'Gravar vídeo sobre produtividade', due: addDays(2), priority: 'Média', area: 'Conteúdo' },
-    { title: 'Atualizar currículo no LinkedIn', due: addDays(-2), priority: 'Baixa', area: 'Carreira', done: true },
+    { title: 'Atualizar currículo no LinkedIn', due: addDays(-2), priority: 'Baixa', area: 'Carreira', done: true, doneAt: addDays(-2) },
     { title: 'Organizar documentos da viagem', due: addDays(5), priority: 'Baixa', area: 'Pessoal' },
+    { title: 'Comprar luminária de mesa', due: addDays(3), priority: 'Média', area: 'Pessoal', project: 'Reformar o home office' },
+    { title: 'Escolher a cadeira nova', priority: 'Baixa', area: 'Pessoal', project: 'Reformar o home office', done: true, doneAt: addDays(-4) },
+    { title: 'Ajustar layout da seção de preços', due: addDays(1), priority: 'Alta', area: 'Trabalho', project: 'Landing page — Cliente Aurora' },
+    { title: 'Enviar primeira versão para o cliente', priority: 'Média', area: 'Trabalho', project: 'Landing page — Cliente Aurora', done: true, doneAt: addDays(-3) },
   ].map((t) => id({ done: false, ...t }));
+  // Histórico de tarefas concluídas nas últimas semanas (alimenta o mosaico e o ritmo da semana).
+  const DONE = ['Responder e-mails pendentes', 'Revisar orçamento do mês', 'Enviar relatório semanal', 'Ler 20 páginas', 'Organizar a mesa', 'Fazer backup do celular', 'Planejar a semana', 'Atualizar portfólio', 'Pagar conta de luz', 'Revisar anotações da aula'];
+  const WEIGHT = [0.4, 1.3, 1.8, 1.2, 1.7, 1.1, 0.6]; // dom → sáb
+  for (let k = 1; k <= 56; k++) {
+    const day = addDays(-k);
+    const n = Math.floor(r() * WEIGHT[new Date(day + 'T12:00').getDay()] * 1.6);
+    for (let i = 0; i < n; i++) d.tasks.push(id({ title: DONE[Math.floor(r() * DONE.length)], due: day, doneAt: day, done: true, priority: 'Média', area: 'Pessoal' }));
+  }
 
   d.events = [
     { title: 'Daily com o time', date: T, time: '09:30', location: 'Google Meet' },
@@ -229,7 +241,8 @@ export function seed() {
   ].map(id);
 
   d.moods = [];
-  d.focus = [50, 75, 25, 100, 50, 75].map((minutes, i) => id({ date: addDays(-(i + 1)), minutes }));
+  const FOCUS_ON = ['Landing page — Cliente Aurora', 'Estudar capítulo 4 de Algoritmos', null, 'Landing page — Cliente Aurora', 'Ler 20 páginas', null];
+  d.focus = [50, 75, 25, 100, 50, 75].map((minutes, i) => id({ date: addDays(-(i + 1)), minutes, ...(FOCUS_ON[i] ? { item: FOCUS_ON[i] } : {}) }));
   d.sleep = [];
   for (let k = 13; k >= 1; k--) {
     d.moods.push(id({ date: addDays(-k), score: Math.max(1, Math.min(5, Math.round(3 + (r() - 0.35) * 3))), energy: 1 + Math.floor(r() * 5), note: '' }));

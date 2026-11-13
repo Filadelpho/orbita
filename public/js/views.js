@@ -7,6 +7,7 @@ import { groupedBars, areaLine, ring, donut, PALETTE } from './charts.js';
 import { insights, financeSummary, habitStreak, weekHabitRate, avg, reply } from './ai.js';
 import { coverArt, openCoverPicker } from './cover.js';
 import { settingsPage } from './settings.js';
+import { dLink, dCard, dEmpty, dBtn, fmtMin, focusWeek, focusBars, focusItemsCard, projectsCard, achievementsCard, heatmapCard, rhythmCard, dataCard } from './home.js';
 
 // ---------- Páginas / navegação ----------
 export const PAGES = [
@@ -180,20 +181,8 @@ function greeting() {
 export const MOODS = ['😞', '😕', '😐', '🙂', '😄'];
 export const MOOD_LABEL = ['Muito mal', 'Mal', 'Neutro', 'Bem', 'Ótimo'];
 
-const dLink = (route, label) => `<a class="dcard-link" href="#/${route}">${esc(label)}${icon('arrowUpRight')}</a>`;
-const dCard = (ico, title, body, { link = '', cls = '' } = {}) => `
-  <section class="dcard ${cls}"><header class="dcard-head">${icon(ico)}<h3>${esc(title)}</h3>${link}</header><div class="dcard-body">${body}</div></section>`;
-const dEmpty = (ico, title, text, btn = '') => `
-  <div class="dempty"><span class="dempty-ico">${icon(ico)}</span><b>${title}</b>${text ? `<p>${esc(text)}</p>` : ''}${btn}</div>`;
-const dBtn = (label, attrs) => `<button class="dbtn" ${attrs}>${icon('plus')}${esc(label)}</button>`;
 const energyIcon = (n) => `<svg viewBox="0 0 22 14" width="22" height="14" aria-hidden="true">${[0, 1, 2, 3, 4].map((i) => `<rect x="${i * 4.5}" y="${12 - (i + 1) * 2.2}" width="3" height="${(i + 1) * 2.2}" rx="1" fill="${i < n ? 'currentColor' : 'var(--surface-3)'}"/>`).join('')}</svg>`;
 
-function weekFocus() {
-  const from = addDays(-6);
-  const total = items('focus').filter((f) => f.date >= from).reduce((s, f) => s + (+f.minutes || 0), 0);
-  return { total, avg: Math.round(total / 7) };
-}
-const fmtMin = (m) => (m >= 60 ? `${Math.floor(m / 60)} h${m % 60 ? ' ' + (m % 60) + ' min' : ''}` : `${m} min`);
 const fmtClock = (s) => `${String(Math.floor(s / 60)).padStart(2, '0')}:${String(s % 60).padStart(2, '0')}`;
 const FOCUS_SECONDS = 25 * 60;
 const RING_C = 2 * Math.PI * 44;
@@ -218,7 +207,7 @@ function dashboard() {
   const M = (m) => moduleOn(m);
   const name = state.user?.name?.split(' ')[0] || '';
   const dateStr = cap(new Date().toLocaleDateString('pt-BR', { weekday: 'long', day: 'numeric', month: 'long' }));
-  const cards = [];
+  const hoje = [], progresso = [], ritmo = [];
 
   if (W.mood && M('health')) {
     const mood = items('moods').find((m) => m.date === T);
@@ -227,106 +216,141 @@ function dashboard() {
       const m = items('moods').find((x) => x.date === addDays(k));
       strip.push(`<i class="${m ? 'm' + m.score : ''}" title="${m ? MOOD_LABEL[m.score - 1] : 'Sem registro'}"></i>`);
     }
-    cards.push(dCard('smile', 'Como foi hoje?', `
+    hoje.push(dCard('smile', 'Como foi hoje?', `
       <div class="hoje-row"><span>Humor</span><div class="mseg">${MOODS.map((e, i) => `<button class="${mood?.score === i + 1 ? 'on' : ''}" data-action="log-mood" data-score="${i + 1}" title="${MOOD_LABEL[i]}" aria-label="${MOOD_LABEL[i]}">${e}</button>`).join('')}</div></div>
       <div class="hoje-row"><span>Energia</span><div class="mseg energy">${[1, 2, 3, 4, 5].map((n) => `<button class="${mood?.energy === n ? 'on' : ''}" data-action="log-energy" data-n="${n}" aria-label="Energia ${n} de 5">${energyIcon(n)}</button>`).join('')}</div></div>
-      <input class="dinput" id="mood-note" data-change="mood-note" maxlength="140" placeholder="Escolha o humor e, se quiser, uma linha sobre o dia" value="${esc(mood?.note || '')}">
-      <div class="mood-strip" aria-label="Humor dos últimos 14 dias">${strip.join('')}</div>`));
+      <input class="dinput" id="mood-note" data-change="mood-note" maxlength="140" placeholder="Uma linha sobre o dia (opcional)" value="${esc(mood?.note || '')}">
+      <div class="mood-strip" aria-label="Humor dos últimos 14 dias">${strip.join('')}</div>`,
+    { extra: mood ? `<span class="dcard-meta">${MOOD_LABEL[mood.score - 1]}</span>` : '' }));
   }
 
   if (W.habits && M('habits')) {
     const habits = items('habits');
-    cards.push(dCard('repeat', 'Hábitos de hoje', habits.length ? `
-      <div class="hlist">${habits.slice(0, 5).map((h) => `
+    const doneH = habits.filter((h) => h.log?.[T]).length;
+    hoje.push(dCard('repeat', 'Hábitos de hoje', habits.length ? `
+      <div class="hlist">${habits.slice(0, 8).map((h) => `
         <button class="hrow ${h.log?.[T] ? 'on' : ''}" data-action="toggle-habit" data-id="${h.id}" data-date="${T}">
           <span class="emoji">${esc(h.emoji || '✨')}</span><span class="name">${esc(h.name)}</span>
-          ${habitStreak(h) ? `<span class="streak">🔥 ${habitStreak(h)}</span>` : ''}<span class="tick">${icon('check')}</span></button>`).join('')}</div>`
+          ${habitStreak(h) ? `<span class="streak">🔥 ${habitStreak(h)}</span>` : ''}<span class="tick">${icon('check')}</span></button>`).join('')}</div>
+      <div class="hfoot"><span>${doneH} de ${habits.length} feitos hoje</span><div class="bar"><i style="width:${(doneH / habits.length) * 100}%"></i></div></div>`
       : dEmpty('repeat', 'Nenhum hábito ainda', 'Comece com um pequeno e marque aqui todo dia.', dBtn('Criar seu primeiro hábito', 'data-action="open-form" data-key="habits"')),
-      { link: dLink('habits', 'Hábitos') }));
+    { link: dLink('habits', 'Hábitos'), cls: 'tallh' }));
   }
 
   if (W.tasks && M('tasks')) {
-    const list = items('tasks').filter((t) => !t.done && (!t.due || t.due <= T)).sort(COLLECTIONS.tasks.sort).slice(0, 6);
-    cards.push(dCard('check', 'Tarefas', list.length ? `
+    const list = items('tasks').filter((t) => !t.done && (!t.due || t.due <= T)).sort(COLLECTIONS.tasks.sort).slice(0, 5);
+    hoje.push(dCard('check', 'Tarefas', list.length ? `
       <div class="tlist">${list.map((t) => `
         <div class="trow"><button class="tcheck" data-action="toggle-done" data-key="tasks" data-id="${t.id}" aria-label="Concluir">${icon('check')}</button>
           <button class="ttitle" data-action="open-form" data-key="tasks" data-id="${t.id}">${esc(t.title)}</button>
           ${t.due && t.due < T ? '<span class="tchip late">Atrasada</span>' : t.priority === 'Alta' ? '<span class="tchip high">Alta</span>' : t.time ? `<span class="tchip">${esc(t.time)}</span>` : ''}</div>`).join('')}</div>`
       : dEmpty('check', 'Tudo feito por aqui. 🎉', '', dBtn('Criar tarefa', 'data-action="open-form" data-key="tasks"')),
-      { link: dLink('tasks', 'Tarefas') }));
+    { link: dLink('tasks', 'Tarefas') }));
   }
 
   if (W.events && M('calendar')) {
     const ev = items('events').filter((e) => e.date >= T && e.date <= addDays(7)).sort(COLLECTIONS.events.sort).slice(0, 4);
-    cards.push(dCard('calendar', 'Agenda', ev.length ? `
+    hoje.push(dCard('calendar', 'Agenda', ev.length ? `
       <div class="elist">${ev.map((e) => `
         <button class="erow" data-action="open-form" data-key="events" data-id="${e.id}">
           <span class="when"><b>${e.date === T ? 'Hoje' : e.date === addDays(1) ? 'Amanhã' : WEEKDAYS[parseISO(e.date).getDay()]}</b><small>${esc(e.time || 'Dia todo')}</small></span>
           <span class="what"><b>${esc(e.title)}</b>${e.location ? `<small>${esc(e.location)}</small>` : ''}</span></button>`).join('')}</div>`
-      : dEmpty('calendar', 'Agenda livre', 'Nada marcado para os próximos 7 dias.', dBtn('Novo compromisso', 'data-action="open-form" data-key="events"')),
-      { link: dLink('calendar', 'Calendário') }));
+      : dEmpty('calendar', 'Agenda livre', 'Nada marcado para os próximos 7 dias.', dBtn('Criar evento', 'data-action="open-form" data-key="events"')),
+    { link: dLink('calendar', 'Calendário') }));
   }
 
   if (W.focus) {
-    const wf = weekFocus();
+    const wf = focusWeek();
     const running = ui.focus && !ui.focus.paused;
-    cards.push(dCard('clock', 'Tempo de foco', `
-      <div class="focus-stats"><div><small>Esta semana</small><b>${fmtMin(wf.total)}</b></div><div><small>Média diária</small><b>${fmtMin(wf.avg)}</b></div></div>
+    const goal = 240;
+    hoje.push(dCard('clock', 'Tempo de foco', `
+      <div class="focus-stats">
+        <div><small>Esta semana</small><b>${fmtMin(wf.total)}</b><span class="delta ${wf.delta < 0 ? 'down' : ''}">${icon('arrowUpRight')}${Math.abs(wf.delta)}% <em>vs. anterior</em></span></div>
+        <div><small>Média diária</small><b>${fmtMin(wf.avg)}</b><span class="delta plain">meta ${goal / 60}h</span></div></div>
+      ${focusBars(wf.perDay, wf.days)}
       <div class="focus-timer clock-${state.settings.focusClock || 'digital'}">${focusFace(running)}
-        <div class="focus-actions">${running ? '<button class="dbtn ghost" data-action="focus-pause">Pausar</button>' : `<button class="dbtn" data-action="focus-start">${ui.focus ? 'Continuar' : 'Focar 25 min'}</button>`}${ui.focus ? '<button class="dbtn ghost" data-action="focus-stop">Encerrar</button>' : ''}</div></div>`));
-  }
-
-  if (W.finance && M('finance')) {
-    const f = financeSummary();
-    const pct = f.income ? Math.min(100, Math.round((f.expense / f.income) * 100)) : 0;
-    cards.push(dCard('wallet', 'Finanças do mês', `
-      <div class="fin-big ${f.balance < 0 ? 'down' : ''}">${brl(f.balance)}</div><small class="muted">Saldo até agora · ${pct}% da renda gasto</small>
-      <div class="fin-bar"><i style="width:${pct}%"></i></div>
-      <div class="fin-rows"><span><i class="in"></i>Entrou<b>${brl(f.income)}</b></span><span><i class="out"></i>Saiu<b>${brl(f.expense)}</b></span></div>`,
-      { link: dLink('finance', 'Finanças') }));
+        <div class="focus-actions">${running ? '<button class="dbtn ghost" data-action="focus-pause">Pausar</button>' : ui.focus ? '<button class="dbtn" data-action="focus-start">Continuar</button>' : '<button class="dbtn" data-action="focus-pick">Focar 25 min</button>'}${ui.focus ? '<button class="dbtn ghost" data-action="focus-stop">Encerrar</button>' : ''}</div></div>
+      ${ui.focus?.item ? `<small class="focus-on">Focando em: <b>${esc(ui.focus.item)}</b></small>` : ''}`));
   }
 
   if (W.goals && M('goals')) {
     const g = items('goals').slice(0, 4);
-    cards.push(dCard('target', 'Metas', g.length ? `<div class="glist">${g.map((x) => `
-      <button class="grow" data-action="open-form" data-key="goals" data-id="${x.id}">${ring(+x.progress || 0, { size: 46, stroke: 5 })}
-        <span><b>${esc(x.title)}</b><small>${x.deadline ? 'até ' + fmtDate(x.deadline) : esc(x.area || '')}</small></span></button>`).join('')}</div>`
+    progresso.push(dCard('target', 'Metas', g.length ? `<div class="glist2">${g.map((x) => `
+      <button class="grow2" data-action="open-form" data-key="goals" data-id="${x.id}"><span class="gt"><i></i><b>${esc(x.title)}</b><em>${+x.progress || 0}%</em></span>
+        <span class="bar"><i style="width:${+x.progress || 0}%"></i></span><small>${x.deadline ? 'até ' + fmtDate(x.deadline) : esc(x.area || '')}</small></button>`).join('')}</div>`
       : dEmpty('target', 'Nenhuma meta ainda', 'Defina algo que você quer conquistar.', dBtn('Criar meta', 'data-action="open-form" data-key="goals"')),
-      { link: dLink('goals', 'Metas'), cls: 'wide' }));
+    { link: dLink('goals', 'Metas'), cls: 'wide' }));
   }
+  if (W.projects && (M('goals') || M('work'))) progresso.push(projectsCard());
 
-  if (W.ai) {
-    cards.push(dCard('spark', 'ORBITA AI', insights().slice(0, 3).map((i) => `<div class="insight ${i.kind}"><span class="dot"></span><span>${esc(i.text)}</span></div>`).join(''),
-      { link: dLink('ai', 'Conversar'), cls: 'wide ai' }));
+  if (W.finance && M('finance')) {
+    const f = financeSummary();
+    const pct = f.income ? Math.min(100, Math.round((f.expense / f.income) * 100)) : 0;
+    progresso.push(dCard('wallet', 'Finanças do mês', `
+      <div class="fin-big ${f.balance < 0 ? 'down' : ''}">${brl(f.balance)}</div><small class="muted">Saldo até agora · ${pct}% da renda gasto</small>
+      <div class="fin-bar"><i style="width:${pct}%"></i></div>
+      <div class="fin-rows"><span><i class="in"></i>Entrou<b>${brl(f.income)}</b></span><span><i class="out"></i>Saiu<b>${brl(f.expense)}</b></span></div>`,
+    { link: dLink('finance', 'Finanças') }));
   }
-
   if (W.content && M('content')) {
     const posts = items('posts').filter((p) => p.status !== 'Publicado').sort((a, b) => (a.date || '9').localeCompare(b.date || '9')).slice(0, 4);
-    cards.push(dCard('pen', 'Próximos conteúdos', posts.length ? `<div class="elist">${posts.map((p) => `
+    progresso.push(dCard('pen', 'Próximos conteúdos', posts.length ? `<div class="elist">${posts.map((p) => `
       <button class="erow" data-action="open-form" data-key="posts" data-id="${p.id}"><span class="what"><b>${esc(p.title)}</b><small>${esc([p.platform, p.status, p.date ? relDate(p.date) : ''].filter(Boolean).join(' · '))}</small></span></button>`).join('')}</div>`
       : dEmpty('pen', 'Nada planejado', 'Anote a próxima ideia de conteúdo.', dBtn('Novo conteúdo', 'data-action="open-form" data-key="posts"')),
-      { link: dLink('content', 'Conteúdo') }));
+    { link: dLink('content', 'Conteúdo') }));
   }
-
   if (W.studies && M('studies')) {
     const st = items('studies').slice(0, 4);
-    cards.push(dCard('grad', 'Estudos', st.length ? st.map((s) => `
+    progresso.push(dCard('grad', 'Estudos', st.length ? st.map((s) => `
       <div class="srow"><div><b>${esc(s.title)}</b><small>${s.progress || 0}%</small></div><div class="bar"><i style="width:${s.progress || 0}%"></i></div></div>`).join('')
       : dEmpty('grad', 'Nenhum curso ainda', 'Cadastre uma matéria, curso ou idioma.', dBtn('Novo estudo', 'data-action="open-form" data-key="studies"')),
-      { link: dLink('studies', 'Educação') }));
+    { link: dLink('studies', 'Educação') }));
   }
 
+  if (W.focusItems) ritmo.push(focusItemsCard());
+  if (W.achievements) ritmo.push(achievementsCard());
+  if (W.heatmap && M('tasks')) ritmo.push(heatmapCard());
+  if (W.rhythm && M('tasks')) ritmo.push(rhythmCard());
+  if (W.ai) ritmo.push(dataCard());
+
   const projects = [...items('personalProjects'), ...items('workProjects')].map((p) => p.title).filter(Boolean);
-  const note = ui.capMode === 'note';
-  const hello = `${greeting()}${name ? ', ' + esc(name) : ''}. O que vem agora?`;
   const classic = state.settings.dashStyle === 'none';
+  const openT = items('tasks').filter((t) => !t.done && t.due === T).length;
+  const evT = items('events').filter((e) => e.date === T).length;
+  const sub = `${openT} ${openT === 1 ? 'tarefa' : 'tarefas'} para hoje · ${evT} ${evT === 1 ? 'evento' : 'eventos'} na agenda`;
+  const section = (label, cards, first = false) => cards.length ? `
+      <div class="dash-head"><span>${label}</span>${first && !classic ? `<button class="dash-custom" data-action="customize-dash">${icon('grid')}Personalizar</button>` : ''}</div>
+      <div class="dgrid">${cards.join('')}</div>` : '';
+  const grid = section('Hoje', hoje, true) + section('Progresso', progresso) + section('Ritmo', ritmo)
+    || dEmpty('grid', 'Seu Início está vazio', 'Escolha os cartões que quer ver.', dBtn('Personalizar', 'data-action="customize-dash"'));
+
+  if (classic) {
+    return `
+    <div class="classic">
+      <header class="classic-head">
+        <div><small>${esc(dateStr)}</small><h1>${greeting()}${name ? ', ' + esc(name) : ''}.</h1><p>${sub}</p></div>
+        <div class="classic-actions">
+          <button class="cbtn ghost" data-action="customize-dash">${icon('grid')}Personalizar</button>
+          <button class="cbtn outline" data-action="${ui.focus ? 'focus-scroll' : 'focus-pick'}">${icon('clock')}${ui.focus ? 'Foco em andamento' : 'Iniciar foco'}</button>
+          <button class="cbtn primary" data-action="capture-open">${icon('plus')}Capturar</button>
+        </div>
+      </header>
+      ${grid}
+    </div>`;
+  }
   return `
-    ${classic ? `<div class="classic-head"><h1>${hello}</h1><p>${esc(dateStr)}</p></div>` : `<section class="cover">
+    <section class="cover">
       ${coverArt()}
-      <div class="cover-text"><h1>${hello}</h1><p>${esc(dateStr)}</p></div>
+      <div class="cover-text"><h1>${greeting()}${name ? ', ' + esc(name) : ''}. O que vem agora?</h1><p>${esc(dateStr)}</p></div>
       <button class="cover-btn" data-action="cover">${icon('image')}Trocar capa</button>
-    </section>`}
-    <div class="capture ${classic ? 'classic' : ''}">
+    </section>
+    ${captureBox(projects)}
+    <div class="dash-wrap">${grid}</div>`;
+}
+
+function captureBox(projects, inModal = false) {
+  const note = ui.capMode === 'note';
+  return `<div class="capture ${inModal ? 'in-modal' : ''}">
       <div class="cap-tabs" role="tablist">
         <button class="cap-tab ${note ? '' : 'on'}" role="tab" aria-selected="${!note}" data-action="cap-mode" data-m="task">${icon('checkSquare')}Tarefa</button>
         <button class="cap-tab ${note ? 'on' : ''}" role="tab" aria-selected="${note}" data-action="cap-mode" data-m="note">${icon('edit')}Nota</button>
@@ -337,17 +361,21 @@ function dashboard() {
         <span class="cap-hint">${note ? 'Use #tag para organizar' : 'Use #tag, !alta e hoje / amanhã'}</span>
         <button class="cap-send" data-action="cap-send" aria-label="Salvar" ${ui.capText?.trim() ? '' : 'disabled'}>${icon('arrowUp')}</button>
       </div>
-    </div>
-    <div class="dash-wrap">
-      <div class="dash-head"><span>Hoje</span><button class="dash-custom" data-action="customize-dash">${icon('grid')}Personalizar</button></div>
-      <div class="dgrid">${cards.join('') || dEmpty('grid', 'Seu Início está vazio', 'Escolha os cartões que quer ver.', dBtn('Personalizar', 'data-action="customize-dash"'))}</div>
     </div>`;
 }
+const captureProjects = () => [...items('personalProjects'), ...items('workProjects')].map((p) => p.title).filter(Boolean);
+function openCaptureModal() {
+  openOverlay(`<div class="modal cap-modal"><div class="modal-head"><h3>Capturar</h3><button class="icon-btn" data-action="close-overlay" aria-label="Fechar">${icon('x')}</button></div>
+    <div class="cap-modal-body">${captureBox(captureProjects(), true)}</div></div>`, (bd) => bd.querySelector('#cap-text')?.focus());
+}
+export { openCaptureModal };
+on('capture-open', openCaptureModal);
+on('focus-scroll', () => document.querySelector('.focus-timer')?.scrollIntoView({ block: 'center', behavior: 'smooth' }));
 
 on('cover', openCoverPicker);
 
 // Captura rápida
-on('cap-mode', (ds) => { ui.capMode = ds.m; bus.render(); document.getElementById('cap-text')?.focus(); });
+on('cap-mode', (ds) => { ui.capMode = ds.m; if (document.querySelector('.cap-modal')) openCaptureModal(); else { bus.render(); document.getElementById('cap-text')?.focus(); } });
 on('cap-type', (ds, el) => {
   ui.capText = el.value;
   const b = document.querySelector('.cap-send');
@@ -373,12 +401,15 @@ export function captureSubmit() {
     if (tags.length) task.tags = tags.join(', ');
     if (ui.capProj) task.project = ui.capProj;
     ui.capText = '';
+    const inModal = !!document.querySelector('.cap-modal');
     upsert('tasks', task);
+    if (inModal) closeOverlay();
     toast(`Tarefa criada${task.due ? (task.due === today() ? ' para hoje' : ' para amanhã') : ''}`);
     document.getElementById('cap-text')?.focus();
     return;
   }
   ui.capText = '';
+  if (document.querySelector('.cap-modal')) closeOverlay();
   bus.render();
   document.getElementById('cap-text')?.focus();
 }
@@ -423,12 +454,38 @@ function tickFocus() {
 function finishFocus(completed) {
   const spent = completed ? FOCUS_SECONDS : FOCUS_SECONDS - focusLeft();
   clearInterval(focusTick); focusTick = null;
+  ui.focusItem = ui.focus?.item || null;
   ui.focus = null;
   const min = Math.round(spent / 60);
   toast(completed ? `Sessão de foco concluída: ${min} min 🎯` : min > 0 ? `${min} min de foco registrados` : 'Sessão encerrada');
-  if (min > 0) upsert('focus', { date: today(), minutes: min });
+  const item = ui.focusItem;
+  ui.focusItem = null;
+  if (min > 0) upsert('focus', { date: today(), minutes: min, ...(item ? { item } : {}) });
   else bus.render();
 }
+// Escolher no que focar: tarefa, hábito, projeto ou foco livre.
+on('focus-pick', () => {
+  if (ui.focus) return;
+  const opts = [
+    ['Tarefas', items('tasks').filter((t) => !t.done).sort(COLLECTIONS.tasks.sort).slice(0, 12).map((t) => t.title)],
+    ['Hábitos', items('habits').map((h) => h.name)],
+    ['Projetos', [...items('personalProjects'), ...items('workProjects')].filter((p) => !['Concluído', 'Entregue'].includes(p.status)).map((p) => p.title)],
+  ].filter(([, l]) => l.length);
+  openOverlay(`<div class="modal"><div class="modal-head"><h3>Iniciar foco</h3><button class="icon-btn" data-action="close-overlay" aria-label="Fechar">${icon('x')}</button></div>
+    <form class="focus-form" data-submit="focus-go">
+      <label class="field"><span>No que você vai focar?</span><select class="input" name="what"><option value="">Foco livre</option>${opts.map(([g, l]) => `<optgroup label="${g}">${l.map((x) => `<option>${esc(x)}</option>`).join('')}</optgroup>`).join('')}</select></label>
+      <p class="muted">Uma sessão de 25 minutos. O tempo entra em “Tempo de foco” e em “Foco por item”.</p>
+      <div class="modal-foot"><button type="button" class="btn ghost" data-action="close-overlay">Cancelar</button><button class="btn primary">${icon('clock')}Começar</button></div>
+    </form></div>`);
+});
+on('focus-go', (ds, form) => {
+  const item = form.elements.what.value;
+  closeOverlay();
+  ui.focus = { end: Date.now() + FOCUS_SECONDS * 1000, paused: false, item: item || null };
+  clearInterval(focusTick); focusTick = setInterval(tickFocus, 1000);
+  if (ui.route !== 'dashboard') go('dashboard'); else bus.render();
+  setTimeout(() => document.querySelector('.focus-timer')?.scrollIntoView({ block: 'center', behavior: 'smooth' }), 80);
+});
 on('focus-start', () => {
   const f = ui.focus;
   if (f && f.paused) { f.end = Date.now() + f.left * 1000; f.paused = false; }
@@ -446,9 +503,9 @@ on('focus-stop', () => { if (ui.focus) finishFocus(false); });
 
 on('customize-dash', () => {
   const W = state.settings.widgets;
-  const labels = { mood: 'Como foi hoje?', habits: 'Hábitos de hoje', tasks: 'Tarefas', events: 'Agenda', focus: 'Tempo de foco', finance: 'Finanças do mês', goals: 'Metas', ai: 'ORBITA AI', content: 'Próximos conteúdos', studies: 'Estudos' };
+  const labels = { mood: 'Como foi hoje?', habits: 'Hábitos de hoje', tasks: 'Tarefas', events: 'Agenda', focus: 'Tempo de foco', goals: 'Metas', projects: 'Projetos em andamento', finance: 'Finanças do mês', content: 'Próximos conteúdos', studies: 'Estudos', focusItems: 'Foco por item', achievements: 'Metas e conquistas', heatmap: 'Tarefas concluídas', rhythm: 'Ritmo da semana', ai: 'O que seus dados mostram' };
   openOverlay(`<div class="modal"><div class="modal-head"><h3>Personalizar Início</h3><button class="icon-btn" data-action="close-overlay">${icon('x')}</button></div>
-    <div style="padding:0 20px">${Object.entries(labels).map(([k, l]) => `<div class="setting"><div class="txt"><b>${l}</b></div><label class="switch"><input type="checkbox" data-change="toggle-widget" data-w="${k}" ${W[k] ? 'checked' : ''}><span></span></label></div>`).join('')}</div>
+    <div style="padding:0 20px;max-height:60vh;overflow:auto">${Object.entries(labels).map(([k, l]) => `<div class="setting"><div class="txt"><b>${l}</b></div><label class="switch"><input type="checkbox" data-change="toggle-widget" data-w="${k}" ${W[k] ? 'checked' : ''}><span></span></label></div>`).join('')}</div>
     <div class="modal-foot"><button class="btn primary" data-action="close-overlay">Pronto</button></div></div>`);
 });
 on('toggle-widget', (ds, el) => { state.settings.widgets[ds.w] = el.checked; save(); });

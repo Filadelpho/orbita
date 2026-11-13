@@ -12,7 +12,7 @@ Tudo roda no navegador, sem servidor de dados e sem nenhuma biblioteca externa.
 
 ## Inspiração e diferenciais
 
-A tela de entrada e o Início seguem o layout do [NEXO](https://nexohaven.com.br/): tela dividida com fundo animado de pixels, saudação sobre uma capa, captura rápida e barra de navegação flutuante. O ORBITA parte desse formato e foca em reunir mais áreas da vida e em ligar os dados entre elas:
+A tela de entrada, o Início e as Configurações seguem o layout do [NEXO](https://nexohaven.com.br/): tela dividida com fundo animado de pixels, saudação sobre uma capa, captura rápida e barra de navegação flutuante. O ORBITA parte desse formato e foca em reunir mais áreas da vida e em ligar os dados entre elas:
 
 | | Este projeto |
 |---|---|
@@ -28,7 +28,7 @@ A tela de entrada e o Início seguem o layout do [NEXO](https://nexohaven.com.br
 
 | Módulo | O que tem |
 |---|---|
-| **Início** | Capa personalizável, captura rápida e cartões: como foi hoje (humor e energia), hábitos, tarefas, agenda, tempo de foco (sessões de 25 min), finanças do mês, metas, IA, conteúdos e estudos. |
+| **Início** | Dois estilos: com capa (pixels, Unsplash ou foto própria) e captura rápida, ou clássico (saudação e botões Personalizar, Iniciar foco e Capturar). Cartões em três seções: **Hoje** (humor e energia, hábitos, tarefas, agenda, tempo de foco), **Progresso** (metas, projetos em andamento, finanças, conteúdos, estudos) e **Ritmo** (foco por item, metas e conquistas, mosaico de tarefas concluídas, ritmo da semana em radar e o que seus dados mostram). |
 | **Tarefas e calendário** | Tarefas com prioridade, área, projeto e tags. Calendário mensal que reúne os outros módulos. |
 | **Hábitos e metas** | Hábitos com sequência de dias, metas com progresso e projetos pessoais em quadro com arrastar e soltar. |
 | **Trabalho e carreira** | Projetos e entregas em quadro, carreira, portfólio e certificações. |
@@ -69,6 +69,7 @@ public/
   js/store.js        estado, persistência e dados de exemplo
   js/ai.js           ORBITA AI: linguagem natural, relatórios e insights
   js/settings.js     configurações, temas, atalhos e lembretes
+  js/home.js         cartões de progresso e ritmo do Início
   js/cover.js        capa do Início: animada, Unsplash ou foto própria
   js/pixels.js       fundo animado de pixels
   js/charts.js       gráficos em SVG

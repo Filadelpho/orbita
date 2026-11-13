@@ -4,7 +4,7 @@ import { state, save, seed, items, today, addDays } from './store.js';
 import { escapeHtml as esc, setCurrency, COLLECTIONS } from './collections.js';
 import { icon, LOGO } from './icons.js';
 import { ui, on, bus, openOverlay, closeOverlay, overlayOpen, toast, confirmDialog, openForm, initials, cap } from './ui.js';
-import { PAGES, MODULE_INFO, moduleOn, go, integrationsBody } from './views.js';
+import { PAGES, MODULE_INFO, moduleOn, go, integrationsBody, openCaptureModal } from './views.js';
 import { COVERS, COVER_KEYS } from './pixels.js';
 import { openCoverPicker, UNSPLASH } from './cover.js';
 
@@ -201,6 +201,7 @@ on('plus-run', (ds) => { closeOverlay(); PLUS_ITEMS[ds.k]?.run(); });
 
 export function openCapture(mode = 'task') {
   ui.capMode = mode;
+  if (S().dashStyle === 'none') { openCaptureModal(); return; }
   if (ui.route !== 'dashboard') go('dashboard');
   else bus.render();
   setTimeout(() => { const t = document.getElementById('cap-text'); t?.focus(); t?.scrollIntoView({ block: 'center', behavior: 'smooth' }); }, 80);
