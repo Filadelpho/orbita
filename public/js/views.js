@@ -6,6 +6,7 @@ import { ui, on, bus, openOverlay, closeOverlay, toast, cap } from './ui.js';
 import { groupedBars, areaLine, ring, donut, PALETTE } from './charts.js';
 import { insights, financeSummary, habitStreak, weekHabitRate, avg, reply } from './ai.js';
 import { coverArt, openCoverPicker } from './cover.js';
+import { settingsPage } from './settings.js';
 
 // ---------- Páginas / navegação ----------
 export const PAGES = [
@@ -21,7 +22,6 @@ export const PAGES = [
   { id: 'health', group: 'Vida', title: 'Saúde e bem-estar', icon: 'heart', module: 'health', render: healthPage },
   { id: 'content', group: 'Vida', title: 'Criatividade e conteúdo', icon: 'pen', module: 'content', render: contentPage },
   { id: 'travel', group: 'Vida', title: 'Viagens e lazer', icon: 'plane', module: 'travel', tabs: ['trips', 'leisure'], desc: 'Destinos, roteiros, orçamentos e momentos de lazer.' },
-  { id: 'integrations', group: 'Sistema', title: 'Integrações', icon: 'plug', render: integrationsPage },
   { id: 'settings', group: 'Sistema', title: 'Configurações', icon: 'gear', render: settingsPage },
 ];
 
@@ -196,6 +196,16 @@ function weekFocus() {
 const fmtMin = (m) => (m >= 60 ? `${Math.floor(m / 60)} h${m % 60 ? ' ' + (m % 60) + ' min' : ''}` : `${m} min`);
 const fmtClock = (s) => `${String(Math.floor(s / 60)).padStart(2, '0')}:${String(s % 60).padStart(2, '0')}`;
 const FOCUS_SECONDS = 25 * 60;
+const RING_C = 2 * Math.PI * 44;
+function focusFace(running) {
+  const left = focusLeft();
+  const prog = 1 - left / FOCUS_SECONDS;
+  const style = state.settings.focusClock || 'digital';
+  const txt = `<span id="focus-time" class="${running ? 'running' : ''}">${fmtClock(left)}</span>`;
+  if (style === 'ring') return `<span class="focus-ring"><svg viewBox="0 0 100 100" aria-hidden="true"><circle cx="50" cy="50" r="44" fill="none" stroke="var(--surface-3)" stroke-width="6"/><circle id="focus-ring" cx="50" cy="50" r="44" fill="none" stroke="var(--accent)" stroke-width="6" stroke-linecap="round" stroke-dasharray="${RING_C}" stroke-dashoffset="${RING_C * (1 - prog)}" transform="rotate(-90 50 50)"/></svg>${txt}</span>`;
+  if (style === 'minimal') return `<span class="focus-min">${txt}<span class="focus-line"><i id="focus-line" style="width:${prog * 100}%"></i></span></span>`;
+  return txt;
+}
 const focusLeft = () => {
   const f = ui.focus;
   if (!f) return FOCUS_SECONDS;
@@ -262,7 +272,7 @@ function dashboard() {
     const running = ui.focus && !ui.focus.paused;
     cards.push(dCard('clock', 'Tempo de foco', `
       <div class="focus-stats"><div><small>Esta semana</small><b>${fmtMin(wf.total)}</b></div><div><small>Média diária</small><b>${fmtMin(wf.avg)}</b></div></div>
-      <div class="focus-timer"><span id="focus-time" class="${running ? 'running' : ''}">${fmtClock(focusLeft())}</span>
+      <div class="focus-timer clock-${state.settings.focusClock || 'digital'}">${focusFace(running)}
         <div class="focus-actions">${running ? '<button class="dbtn ghost" data-action="focus-pause">Pausar</button>' : `<button class="dbtn" data-action="focus-start">${ui.focus ? 'Continuar' : 'Focar 25 min'}</button>`}${ui.focus ? '<button class="dbtn ghost" data-action="focus-stop">Encerrar</button>' : ''}</div></div>`));
   }
 
@@ -308,13 +318,15 @@ function dashboard() {
 
   const projects = [...items('personalProjects'), ...items('workProjects')].map((p) => p.title).filter(Boolean);
   const note = ui.capMode === 'note';
+  const hello = `${greeting()}${name ? ', ' + esc(name) : ''}. O que vem agora?`;
+  const classic = state.settings.dashStyle === 'none';
   return `
-    <section class="cover">
+    ${classic ? `<div class="classic-head"><h1>${hello}</h1><p>${esc(dateStr)}</p></div>` : `<section class="cover">
       ${coverArt()}
-      <div class="cover-text"><h1>${greeting()}${name ? ', ' + esc(name) : ''}. O que vem agora?</h1><p>${esc(dateStr)}</p></div>
+      <div class="cover-text"><h1>${hello}</h1><p>${esc(dateStr)}</p></div>
       <button class="cover-btn" data-action="cover">${icon('image')}Trocar capa</button>
-    </section>
-    <div class="capture">
+    </section>`}
+    <div class="capture ${classic ? 'classic' : ''}">
       <div class="cap-tabs" role="tablist">
         <button class="cap-tab ${note ? '' : 'on'}" role="tab" aria-selected="${!note}" data-action="cap-mode" data-m="task">${icon('checkSquare')}Tarefa</button>
         <button class="cap-tab ${note ? 'on' : ''}" role="tab" aria-selected="${note}" data-action="cap-mode" data-m="note">${icon('edit')}Nota</button>
@@ -403,6 +415,9 @@ function tickFocus() {
   const left = focusLeft();
   const el = document.getElementById('focus-time');
   if (el) el.textContent = fmtClock(left);
+  const prog = 1 - left / FOCUS_SECONDS;
+  document.getElementById('focus-ring')?.setAttribute('stroke-dashoffset', String(RING_C * (1 - prog)));
+  document.getElementById('focus-line')?.style.setProperty('width', `${prog * 100}%`);
   if (ui.focus && !ui.focus.paused && left <= 0) finishFocus(true);
 }
 function finishFocus(completed) {
@@ -438,17 +453,6 @@ on('customize-dash', () => {
 });
 on('toggle-widget', (ds, el) => { state.settings.widgets[ds.w] = el.checked; save(); });
 
-export function quickAddMenu() {
-  const opts = [
-    ['tasks', 'Tarefa', 'check', 'tasks'], ['events', 'Compromisso', 'calendar', 'calendar'], ['transactions', 'Gasto ou receita', 'wallet', 'finance'],
-    ['habits', 'Hábito', 'repeat', 'habits'], ['goals', 'Meta', 'target', 'goals'], ['journal', 'Entrada no diário', 'pen', 'health'],
-    ['workouts', 'Treino', 'dumbbell', 'health'], ['posts', 'Conteúdo', 'pen', 'content'], ['studies', 'Curso ou matéria', 'grad', 'studies'],
-  ].filter((o) => moduleOn(o[3]));
-  openOverlay(`<div class="modal"><div class="modal-head"><h3>Adicionar rapidamente</h3><button class="icon-btn" data-action="close-overlay">${icon('x')}</button></div>
-    <div style="padding:8px 20px 20px;display:grid;grid-template-columns:repeat(3,1fr);gap:8px">${opts.map(([k, l, i]) => `
-      <button class="module-pick" style="padding:14px;gap:8px" data-action="open-form" data-key="${k}"><span class="ico">${icon(i)}</span><span style="font-weight:500;font-size:13px">${l}</span></button>`).join('')}</div></div>`);
-}
-on('quick-add', quickAddMenu);
 
 // ---------- Hábitos ----------
 function habitsPage() {
@@ -498,7 +502,8 @@ function calendarPage() {
   const cursor = ui.calCursor ? parseISO(ui.calCursor) : new Date();
   const y = cursor.getFullYear(), m = cursor.getMonth();
   const first = new Date(y, m, 1);
-  const start = new Date(y, m, 1 - first.getDay());
+  const ws = state.settings.weekStart === 1 ? 1 : 0;
+  const start = new Date(y, m, 1 - ((first.getDay() - ws + 7) % 7));
   const sel = ui.calSelected || T;
   let cells = '';
   for (let i = 0; i < 42; i++) {
@@ -517,7 +522,7 @@ function calendarPage() {
       <button class="btn primary" data-action="open-form" data-key="events" data-def-date="${sel}">${icon('plus')}Compromisso</button>`) + `
     <div class="cal">
       <div><h2 style="margin:0 0 12px;font-size:20px;letter-spacing:-.02em">${MONTHS_FULL[m]} <span class="muted" style="font-weight:400">${y}</span></h2>
-        <div class="cal-grid">${WEEKDAYS.map((w) => `<div class="cal-dow">${w}</div>`).join('')}${cells}</div>
+        <div class="cal-grid">${[...WEEKDAYS.slice(ws), ...WEEKDAYS.slice(0, ws)].map((w) => `<div class="cal-dow">${w}</div>`).join('')}${cells}</div>
         <div class="legend" style="flex-wrap:wrap"><span><i style="background:var(--accent)"></i>Compromissos</span><span><i style="background:var(--surface-3)"></i>Tarefas</span><span><i style="background:var(--danger)"></i>Contas</span><span><i style="background:var(--purple)"></i>Conteúdo</span><span><i style="background:var(--success)"></i>Viagens</span></div>
       </div>
       <div class="card">
@@ -721,10 +726,10 @@ const INTEGRATIONS = [
   { id: 'spotify', name: 'Spotify', logo: '🎧', desc: 'Playlists de foco para suas sessões de estudo.' },
 ];
 
-function integrationsPage() {
+export function integrationsBody() {
   const st = state.integrations || {};
   const gh = st.github;
-  return head('Integrações', 'Conecte o ORBITA às plataformas que você já usa.') + `
+  return `
     <div class="grid cols-2">${INTEGRATIONS.map((it) => {
       const on = !!st[it.id];
       let extra = '';
@@ -762,45 +767,4 @@ on('gh-connect', async (ds, form) => {
   save();
 });
 
-// ---------- Configurações ----------
-function settingsPage() {
-  const s = state.settings;
-  const theme = s.theme;
-  return head('Configurações', 'Personalize sua experiência no ORBITA.') + `
-    <div class="dash">
-      <div class="card span-6">${cardHead('user', 'Perfil')}
-        <form data-submit="save-profile" style="display:flex;flex-direction:column;gap:12px">
-          <label class="field"><span>Nome</span><input name="name" value="${esc(state.user?.name || '')}"></label>
-          <label class="field"><span>E-mail</span><input name="email" type="email" value="${esc(state.user?.email || '')}"></label>
-          <div><button class="btn primary sm">Salvar perfil</button></div>
-        </form></div>
-      <div class="card span-6">${cardHead('sun', 'Aparência e preferências')}
-        <div class="setting"><div class="txt"><b>Tema</b><small>Claro, escuro ou automático</small></div>
-          <div class="seg"><button class="${theme === 'light' ? 'on' : ''}" data-action="set-theme" data-t="light">${icon('sun')}Claro</button><button class="${theme === 'dark' ? 'on' : ''}" data-action="set-theme" data-t="dark">${icon('moon')}Escuro</button><button class="${theme === 'system' ? 'on' : ''}" data-action="set-theme" data-t="system">${icon('monitor')}Auto</button></div></div>
-        <div class="setting"><div class="txt"><b>Notificações inteligentes</b><small>Avisos de tarefas, contas e hábitos</small></div><label class="switch"><input type="checkbox" data-change="toggle-setting" data-k="notifications" ${s.notifications ? 'checked' : ''}><span></span></label></div>
-        <div class="setting"><div class="txt"><b>Autenticação em dois fatores</b><small>Exige código no login quando a conta em nuvem estiver ativa</small></div><label class="switch"><input type="checkbox" data-change="toggle-setting" data-k="twofa" ${s.twofa ? 'checked' : ''}><span></span></label></div>
-      </div>
-      <div class="card span-12">${cardHead('grid', 'Módulos', '<span class="more">Ative só o que faz sentido para você</span>')}
-        <div class="module-grid" style="margin:0">${Object.entries(MODULE_INFO).map(([k, m]) => `
-          <button class="module-pick ${s.modules[k] !== false ? 'on' : ''}" data-action="toggle-module" data-m="${k}"><span class="tick">${icon('check')}</span><span class="ico">${icon(m.icon)}</span><b>${m.title}</b><small>${m.desc}</small></button>`).join('')}</div></div>
-      <div class="card span-6">${cardHead('cloud', 'Dados e sincronização')}
-        <div class="setting"><div class="txt"><b>Armazenamento</b><small>Seus dados ficam salvos neste dispositivo e funcionam offline.</small></div><span class="chip green">Offline ativo</span></div>
-        <div class="setting"><div class="txt"><b>Exportar backup</b><small>Baixe todos os seus dados em JSON</small></div><button class="btn sm" data-action="export">${icon('download')}Exportar</button></div>
-        <div class="setting"><div class="txt"><b>Importar backup</b><small>Restaure de um arquivo exportado</small></div><label class="btn sm">${icon('upload')}Importar<input type="file" accept="application/json" data-change="import" hidden></label></div>
-        <div class="setting"><div class="txt"><b>Exportar finanças (CSV)</b><small>Para planilhas</small></div><button class="btn sm" data-action="export-csv">${icon('download')}CSV</button></div>
-      </div>
-      <div class="card span-6">${cardHead('shield', 'Conta')}
-        <div class="setting"><div class="txt"><b>Sair</b><small>Seus dados continuam salvos neste dispositivo</small></div><button class="btn sm" data-action="logout">${icon('logout')}Sair</button></div>
-        <div class="setting"><div class="txt"><b>Restaurar dados de exemplo</b><small>Substitui seus dados pelos dados de demonstração</small></div><button class="btn sm" data-action="reseed">Restaurar</button></div>
-        <div class="setting"><div class="txt"><b style="color:var(--danger)">Apagar tudo</b><small>Remove todos os dados deste dispositivo</small></div><button class="btn sm danger" data-action="wipe">${icon('trash')}Apagar</button></div>
-      </div>
-    </div>`;
-}
-
-on('save-profile', (ds, form) => {
-  state.user = { ...state.user, name: form.elements.name.value.trim(), email: form.elements.email.value.trim() };
-  save();
-  toast('Perfil atualizado');
-});
-on('toggle-setting', (ds, el) => { state.settings[ds.k] = el.checked; save(); });
 on('toggle-module', (ds) => { state.settings.modules[ds.m] = state.settings.modules[ds.m] === false; save(); });

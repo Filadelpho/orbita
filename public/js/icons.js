@@ -51,6 +51,20 @@ const P = {
   eye: 'M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12zM12 15a3 3 0 1 0 0-6 3 3 0 0 0 0 6z',
   eyeOff: 'M3 3l18 18M10.6 5.1A10.6 10.6 0 0 1 12 5c6.5 0 10 7 10 7a17 17 0 0 1-3.2 4.1M6.6 6.6C3.9 8.4 2 12 2 12s3.5 7 10 7c1.9 0 3.6-.6 5-1.5M9.9 9.9a3 3 0 0 0 4.2 4.2',
   chevD: 'M6 9l6 6 6-6',
+  palette: 'M12 3a9 9 0 1 0 0 18c1.1 0 1.5-.8 1.5-1.5 0-.9-.6-1.3-.6-2.1 0-.8.7-1.4 1.6-1.4H17a4 4 0 0 0 4-4c0-5-4-9-9-9zM7.5 11.5h.01M9.5 7.5h.01M14.5 7.5h.01M17 11h.01',
+  layout: 'M4 4h16v16H4zM4 9h16M9 9v11',
+  globe: 'M12 3a9 9 0 1 0 0 18 9 9 0 0 0 0-18zM3 12h18M12 3c2.5 2.6 3.8 5.6 3.8 9s-1.3 6.4-3.8 9c-2.5-2.6-3.8-5.6-3.8-9S9.5 5.6 12 3z',
+  keyboard: 'M3 6h18v12H3zM7 10h.01M11 10h.01M15 10h.01M17 14H7',
+  phone: 'M8 2h8a2 2 0 0 1 2 2v16a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2zM11 18h2',
+  lock: 'M6 11h12v10H6zM8 11V7a4 4 0 0 1 8 0v4',
+  type: 'M4 7V5h16v2M12 5v14M9 19h6',
+  grip: 'M9 6h.01M15 6h.01M9 12h.01M15 12h.01M9 18h.01M15 18h.01',
+  volume: 'M11 5 6 9H3v6h3l5 4zM15.5 8.5a5 5 0 0 1 0 7M18.5 5.5a9 9 0 0 1 0 13',
+  database: 'M12 3c4.4 0 8 1.3 8 3s-3.6 3-8 3-8-1.3-8-3 3.6-3 8-3zM4 6v6c0 1.7 3.6 3 8 3s8-1.3 8-3V6M4 12v6c0 1.7 3.6 3 8 3s8-1.3 8-3v-6',
+  wifi: 'M5 12.5a10 10 0 0 1 14 0M8.5 16a5 5 0 0 1 7 0M2 9a15 15 0 0 1 20 0M12 19.5h.01',
+  drop: 'M12 3s6 6.5 6 11a6 6 0 0 1-12 0c0-4.5 6-11 6-11z',
+  sidebar: 'M4 4h16v16H4zM9 4v16',
+  dock: 'M4 4h16v16H4zM8 16h8',
   arrowUpRight: 'M7 17L17 7M8 7h9v9',
   image: 'M4 5h16a1 1 0 0 1 1 1v12a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V6a1 1 0 0 1 1-1zM3 16l5-5 4 4 3-3 6 6M15.5 9.5h.01',
   checkSquare: 'M5 4h14a1 1 0 0 1 1 1v14a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V5a1 1 0 0 1 1-1zM8.5 12l2.5 2.5 4.5-5',
@@ -64,6 +78,6 @@ export function icon(name, cls = '') {
   return `<svg class="i ${cls}" viewBox="0 0 24 24" aria-hidden="true"><path d="${d}"/></svg>`;
 }
 
-export const LOGO = `<svg viewBox="0 0 64 64" aria-hidden="true"><ellipse cx="32" cy="32" rx="24" ry="10" fill="none" stroke="#0a84ff" stroke-width="3.5" transform="rotate(-28 32 32)"/><circle cx="32" cy="32" r="9" fill="#fff"/><circle cx="52.5" cy="21" r="4" fill="#5ac8fa"/></svg>`;
+export const LOGO = `<svg viewBox="0 0 64 64" aria-hidden="true"><ellipse cx="32" cy="32" rx="24" ry="10" fill="none" stroke="var(--logo-ring, #0a84ff)" stroke-width="3.5" transform="rotate(-28 32 32)"/><circle cx="32" cy="32" r="9" fill="var(--logo-core, #fff)"/><circle cx="52.5" cy="21" r="4" fill="var(--logo-moon, #5ac8fa)"/></svg>`;
 
 export const GOOGLE = `<svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><path fill="#4285F4" d="M22.5 12.3c0-.8-.1-1.5-.2-2.2H12v4.2h5.9a5 5 0 0 1-2.2 3.3v2.7h3.6c2-1.9 3.2-4.7 3.2-8z"/><path fill="#34A853" d="M12 23c3 0 5.5-1 7.3-2.7l-3.6-2.7c-1 .7-2.2 1-3.7 1-2.8 0-5.2-1.9-6.1-4.5H2.2v2.8A11 11 0 0 0 12 23z"/><path fill="#FBBC05" d="M5.9 14.1a6.6 6.6 0 0 1 0-4.2V7.1H2.2a11 11 0 0 0 0 9.8z"/><path fill="#EA4335" d="M12 5.4c1.6 0 3 .6 4.1 1.6l3.1-3.1A11 11 0 0 0 2.2 7.1l3.7 2.8C6.8 7.3 9.2 5.4 12 5.4z"/></svg>`;

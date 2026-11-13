@@ -263,12 +263,19 @@ export const COLLECTIONS = {
 };
 
 // ---------- Formatação ----------
-const BRL = new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' });
+// Moeda escolhida em Configurações › Idioma e região.
+let BRL = new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' });
+let SYMBOL = 'R$';
+export function setCurrency(code = 'BRL') {
+  if (BRL.resolvedOptions().currency === code) return;
+  try { BRL = new Intl.NumberFormat('pt-BR', { style: 'currency', currency: code }); } catch { return; }
+  SYMBOL = BRL.formatToParts(0).find((p) => p.type === 'currency')?.value || code;
+}
 export const brl = (n) => BRL.format(+n || 0);
 export const brlShort = (n) => {
   const v = +n || 0;
-  if (Math.abs(v) >= 1000) return 'R$ ' + (v / 1000).toLocaleString('pt-BR', { maximumFractionDigits: 1 }) + 'k';
-  return 'R$ ' + Math.round(v);
+  if (Math.abs(v) >= 1000) return SYMBOL + ' ' + (v / 1000).toLocaleString('pt-BR', { maximumFractionDigits: 1 }) + 'k';
+  return SYMBOL + ' ' + Math.round(v);
 };
 const MONTHS = ['jan', 'fev', 'mar', 'abr', 'mai', 'jun', 'jul', 'ago', 'set', 'out', 'nov', 'dez'];
 export const MONTHS_FULL = ['Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho', 'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro'];

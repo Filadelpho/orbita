@@ -3,31 +3,26 @@ import { state, save, subscribe, seed, items, today, addDays, replaceState, rese
 import { COLLECTIONS, primaryOf, brl, relDate, escapeHtml as esc } from './collections.js';
 import { icon, LOGO, GOOGLE } from './icons.js';
 import { ui, on, bus, openOverlay, closeOverlay, overlayOpen, toast, confirmDialog, initials, openForm } from './ui.js';
-import { PAGES, MODULE_INFO, moduleOn, go, genericPage, quickAddMenu, askAI } from './views.js';
+import { PAGES, MODULE_INFO, moduleOn, go, genericPage, askAI } from './views.js';
+import { applyAppearance, dockPages as pinnedPages, quickAddMenu, handleShortcut, hooks, avatarInner, scrollToPending } from './settings.js';
 import { mountDashCover } from './cover.js';
 import { startPixels } from './pixels.js';
 
 const app = document.getElementById('app');
 
-// ---------- Tema ----------
-const mq = matchMedia('(prefers-color-scheme: light)');
-function applyTheme() {
-  const t = state.settings.theme === 'system' ? (mq.matches ? 'light' : 'dark') : state.settings.theme;
-  document.documentElement.dataset.theme = t;
-  document.querySelector('meta[name=theme-color]').content = t === 'light' ? '#f5f5f7' : '#000000';
-}
-mq.addEventListener?.('change', applyTheme);
+// ---------- Tema (detalhes em settings.js) ----------
 on('set-theme', (ds) => { state.settings.theme = ds.t; save(); });
 function toggleTheme() {
   const cur = document.documentElement.dataset.theme;
   state.settings.theme = cur === 'dark' ? 'light' : 'dark';
+  delete state.settings.accent;
   save();
 }
 on('toggle-theme', toggleTheme);
 
 // ---------- Render ----------
 function render() {
-  applyTheme();
+  applyAppearance();
   if (!state.user) return renderAuth();
   if (!state.onboarded) return renderOnboarding();
   renderShell();
@@ -99,9 +94,9 @@ on('toggle-pass', (ds, el) => {
 
 on('auth-mode', (ds) => { ui.authMode = ds.m; render(); });
 on('forgot', () => toast('A recuperação de senha chega com a conta em nuvem.'));
-function login(name, email) {
+function login(name, email, provider = 'email') {
   const hasData = Object.keys(state.data || {}).length > 0;
-  state.user = { name, email };
+  state.user = { ...(state.user?.email === email && email ? state.user : {}), name, email, provider };
   if (!hasData) seed();
   save();
 }
@@ -110,7 +105,7 @@ on('auth', (ds, form) => {
   const name = form.elements.name?.value.trim() || state.user?.name || email.split('@')[0].replace(/[._-]+/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase());
   login(name, email);
 });
-on('social', (ds) => login(`Usuário ${ds.p}`, ''));
+on('social', (ds) => login(`Usuário ${ds.p}`, '', ds.p));
 
 // ---------- Onboarding ----------
 function renderOnboarding() {
@@ -151,8 +146,7 @@ function notifications() {
   return out;
 }
 
-// Barra flutuante: Início + atalhos dos módulos mais usados; o resto fica no botão de módulos.
-const DOCK = ['dashboard', 'tasks', 'calendar', 'habits', 'finance', 'ai'];
+// Dock flutuante (módulos fixados em Configurações › Navegação) ou barra lateral.
 
 function renderShell() {
   const page = PAGES.find((p) => p.id === ui.route && moduleOn(p.module)) || PAGES[0];
@@ -163,21 +157,31 @@ function renderShell() {
   const overdue = items('tasks').filter((t) => !t.done && t.due && t.due <= today()).length;
   const notifs = notifications();
   const isDash = page.id === 'dashboard';
+  const onCover = isDash && state.settings.dashStyle !== 'none';
+  const sidebar = state.settings.nav === 'sidebar';
 
-  const dockPages = DOCK.map((id) => PAGES.find((p) => p.id === id)).filter((p) => p && moduleOn(p.module));
+  const dockPages = pinnedPages();
   if (!dockPages.includes(page)) dockPages.push(page);
+  const sideRest = PAGES.filter((p) => moduleOn(p.module) && !dockPages.includes(p) && p.id !== 'settings');
+  const sideLink = (p) => `<a class="side-item ${p === page ? 'active' : ''}" href="#/${p.id}">${icon(p.icon)}<span>${esc(p.id === 'dashboard' ? 'Início' : p.title)}</span>${p.id === 'tasks' && overdue ? `<b class="side-count">${overdue}</b>` : ''}</a>`;
 
   app.innerHTML = `
-  <div class="shell ${isDash ? 'on-cover' : ''}">
+  <div class="shell ${onCover ? 'on-cover' : ''} ${sidebar ? 'nav-side' : ''}">
+    ${sidebar ? `<aside class="side" aria-label="Módulos">
+      <a class="side-logo" href="#/dashboard">${LOGO}<b>ORBITA</b></a>
+      <button class="side-add" data-action="quick-add">${icon('plus')}<span>Adicionar</span><kbd>N</kbd></button>
+      <nav class="side-nav">${dockPages.map(sideLink).join('')}${sideRest.length ? `<div class="side-sep">Mais</div>${sideRest.map(sideLink).join('')}` : ''}</nav>
+      <div class="side-foot">${sideLink(PAGES.find((p) => p.id === 'settings'))}</div>
+    </aside>` : ''}
     <header class="topbar">
       <a class="tb-logo" href="#/dashboard" aria-label="Início">${LOGO}</a>
       <div class="spacer"></div>
       <button class="tb-pill" data-action="palette">${icon('search')}<span class="lbl">Buscar</span><kbd>Ctrl</kbd><kbd>K</kbd></button>
       <a class="tb-pill ai" href="#/ai">${icon('spark')}<span class="lbl">ORBITA AI</span></a>
       <button class="tb-icon notif-dot" data-count="${notifs.length}" data-action="notif" aria-label="Notificações">${icon('bell')}</button>
-      <button class="tb-avatar" data-action="user-menu" aria-label="Sua conta">${esc(initials(state.user.name))}</button>
+      <button class="tb-avatar" data-action="user-menu" aria-label="Sua conta">${avatarInner()}</button>
     </header>
-    <main class="content ${isDash ? 'flush' : ''}" data-route="${page.id}"><div class="page">${page.render ? page.render(page) : genericPage(page)}</div></main>
+    <main class="content ${onCover ? 'flush' : ''}" data-route="${page.id}"><div class="page">${page.render ? page.render(page) : genericPage(page)}</div></main>
     <nav class="dock" aria-label="Navegação">
       <div class="dock-items">${dockPages.map((p) => `
         <a class="dock-item ${p === page ? 'active' : ''}" href="#/${p.id}" title="${esc(p.title)}" aria-label="${esc(p.title)}">${icon(p.icon)}${p === page ? `<span>${esc(p.id === 'dashboard' ? 'Início' : p.title)}</span>` : ''}${p.id === 'tasks' && overdue && p !== page ? '<i class="dock-dot"></i>' : ''}</a>`).join('')}</div>
@@ -189,9 +193,9 @@ function renderShell() {
   ${ui.notifOpen ? `<div class="popover" id="notif-pop"><h4>Notificações</h4>${notifs.length ? notifs.map((n) => `
     <button class="palette-item" data-action="notif-open" ${n.key ? `data-key="${n.key}" data-id="${n.id}"` : `data-route="${n.route}"`}><span class="chip ${n.cls}" style="width:28px;height:28px;padding:0;justify-content:center">${icon(n.ico)}</span><span style="flex:1">${esc(n.text)}</span></button>`).join('') : '<div class="empty">Tudo em dia ✨</div>'}</div>` : ''}
   ${ui.userOpen ? `<div class="popover user-pop" id="user-pop">
-    <div class="user-head"><div class="avatar">${esc(initials(state.user.name))}</div><div><b>${esc(state.user.name || 'Você')}</b><small>${esc(state.user.email || 'Plano pessoal · local')}</small></div></div>
+    <div class="user-head"><div class="avatar">${avatarInner()}</div><div><b>${esc(state.user.name || 'Você')}</b><small>${esc(state.user.email || 'Plano pessoal · local')}</small></div></div>
     <a class="palette-item" href="#/settings">${icon('gear')}<span>Configurações</span></a>
-    <a class="palette-item" href="#/integrations">${icon('plug')}<span>Integrações</span></a>
+    <a class="palette-item" href="#/settings/integracoes">${icon('plug')}<span>Integrações</span></a>
     <button class="palette-item" data-action="toggle-theme">${icon(document.documentElement.dataset.theme === 'dark' ? 'sun' : 'moon')}<span>Tema ${document.documentElement.dataset.theme === 'dark' ? 'claro' : 'escuro'}</span></button>
     <button class="palette-item" data-action="logout">${icon('logout')}<span>Sair</span></button>
   </div>` : ''}
@@ -200,7 +204,7 @@ function renderShell() {
 
   const c = document.querySelector('.content');
   c.scrollTop = scroll;
-  if (isDash) {
+  if (onCover) {
     mountDashCover();
     const tb = app.querySelector('.topbar');
     const solid = () => tb.classList.toggle('solid', c.scrollTop > 360);
@@ -208,6 +212,7 @@ function renderShell() {
     c.addEventListener('scroll', solid, { passive: true });
   }
   if (focusId) document.getElementById(focusId)?.focus();
+  scrollToPending();
   const log = document.getElementById('chat-log');
   if (log) log.scrollTop = log.scrollHeight;
 }
@@ -229,8 +234,12 @@ on('notif-open', (ds) => {
 
 // ---------- Roteamento ----------
 function route() {
-  const r = location.hash.replace(/^#\/?/, '') || 'dashboard';
-  ui.route = r;
+  let r = location.hash.replace(/^#\/?/, '') || 'dashboard';
+  if (r === 'integrations') { location.replace('#/settings/integracoes'); return; }
+  const [id, sub] = r.split('/');
+  ui.route = id;
+  ui.sub = sub || '';
+  ui.recording = null;
   closePops();
   render();
   document.querySelector('.content')?.scrollTo(0, 0);
@@ -308,16 +317,12 @@ function openPalette() {
   });
 }
 on('palette', openPalette);
+hooks.palette = openPalette;
 
 document.addEventListener('keydown', (e) => {
   if (!state.user || !state.onboarded) return;
-  const typing = /INPUT|TEXTAREA|SELECT/.test(document.activeElement?.tagName);
-  if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'k') { e.preventDefault(); overlayOpen() ? closeOverlay() : openPalette(); return; }
-  if (e.key === 'Escape') { if (overlayOpen()) closeOverlay(); else if (ui.notifOpen || ui.userOpen || ui.modulesOpen) { closePops(); render(); } return; }
-  if (typing || overlayOpen() || e.ctrlKey || e.metaKey || e.altKey) return;
-  if (e.key === '/') { e.preventDefault(); openPalette(); }
-  if (e.key.toLowerCase() === 'n') { e.preventDefault(); quickAddMenu(); }
-  if (e.key.toLowerCase() === 't') { e.preventDefault(); openForm('tasks'); }
+  if (e.key === 'Escape' && !ui.recording) { if (overlayOpen()) closeOverlay(); else if (ui.notifOpen || ui.userOpen || ui.modulesOpen) { closePops(); render(); } return; }
+  handleShortcut(e);
 });
 
 // ---------- Dados: exportar / importar ----------

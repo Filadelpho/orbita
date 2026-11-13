@@ -22,7 +22,7 @@ A tela de entrada e o Início seguem o layout do [NEXO](https://nexohaven.com.br
 | **Sem dependências** | JavaScript puro em módulos ES, sem framework, sem build e sem `npm install`. O servidor de desenvolvimento tem cerca de 40 linhas de Node. |
 | **Funciona offline** | PWA com service worker: dá para instalar como app e usar sem internet. |
 | **Seus dados com você** | Tudo fica no navegador. Dá para exportar e importar um backup em JSON e exportar as finanças em CSV. |
-| **Visual minimalista** | Preto com azul, fonte DM Sans, tema claro, escuro ou automático, e capa do Início com pixels animados, fotos do Unsplash ou foto própria. |
+| **Visual minimalista** | Preto com azul e fonte DM Sans por padrão, com 16 temas e 10 fontes para escolher, e capa do Início com pixels animados, fotos do Unsplash ou foto própria. |
 
 ## Módulos
 
@@ -39,7 +39,11 @@ A tela de entrada e o Início seguem o layout do [NEXO](https://nexohaven.com.br
 | **Viagens e lazer** | Destinos, roteiros e orçamento. |
 | **ORBITA AI** | Conversa em português, relatórios (dia, semana, finanças, saúde, estudos), sugestões e organização automática de tarefas atrasadas. |
 
-**Recursos gerais:** busca global e comandos (`Ctrl+K`), atalhos de teclado (`N` adiciona, `T` cria tarefa), notificações, temas e integração com o GitHub (lista seus repositórios públicos).
+**Recursos gerais:** busca global e comandos (`Ctrl+K`), atalhos de teclado personalizáveis, lembretes com notificação e som, e integração com o GitHub (lista seus repositórios públicos).
+
+## Configurações
+
+Nove abas, com busca por nome: **Conta** (perfil e foto, segurança, aparelho, backup), **Aparência** (16 temas, cor da logo e de destaque, 10 fontes, cores do sistema, ícone do app, tamanho da interface e do texto, estilo do relógio do foco), **Navegação** (dock ou barra lateral, módulos fixados e a ordem deles, atalhos do botão +, Início com capa ou clássico), **Módulos**, **Notificações** (bom dia, boa noite, revisão da semana, hábitos, treino, contas a vencer e horário de silêncio), **Idioma e região** (moeda e início da semana), **Integrações**, **Atalhos** (cada tecla pode ser trocada) e **App** (instalar, status da rede, limpar o cache).
 
 ## Como rodar
 
@@ -64,6 +68,7 @@ public/
   js/collections.js  campos de cada módulo, descritos como dados
   js/store.js        estado, persistência e dados de exemplo
   js/ai.js           ORBITA AI: linguagem natural, relatórios e insights
+  js/settings.js     configurações, temas, atalhos e lembretes
   js/cover.js        capa do Início: animada, Unsplash ou foto própria
   js/pixels.js       fundo animado de pixels
   js/charts.js       gráficos em SVG
@@ -75,6 +80,8 @@ public/
 - **Dados só no navegador.** Login, verificação em duas etapas e sincronização entre aparelhos ainda precisam de um servidor.
 - **Login de demonstração.** Os botões do Google e da Apple na tela de entrada não autenticam de verdade.
 - **Integrações.** Só a do GitHub funciona. Google Agenda, Drive, Apple Saúde, Health Connect e Open Finance aparecem na tela, mas por enquanto só guardam a preferência.
+- **Idiomas.** Só português por enquanto; inglês e espanhol aparecem como "em breve".
+- **Lembretes.** Chegam enquanto o app está aberto ou instalado; avisos com o app fechado precisam de um servidor de push.
 - **IA por regras.** A ORBITA AI reconhece padrões de frases em português; não é um modelo de linguagem.
 
 ## Créditos
