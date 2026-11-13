@@ -7,6 +7,7 @@ import { groupedBars, areaLine, ring, donut, PALETTE } from './charts.js';
 import { insights, financeSummary, habitStreak, weekHabitRate, avg, reply } from './ai.js';
 import { coverArt, openCoverPicker } from './cover.js';
 import { settingsPage } from './settings.js';
+import { openTaskModal } from './task-modal.js';
 import { habitList, habitTree, groupChildren, habitDue, challengeInfo, freqLabel } from './habits.js';
 import { dLink, dCard, dEmpty, dBtn, fmtMin, focusWeek, focusBars, focusItemsCard, projectsCard, achievementsCard, heatmapCard, rhythmCard, dataCard } from './home.js';
 
@@ -381,11 +382,7 @@ function captureBox(projects, inModal = false) {
       </div>
     </div>`;
 }
-const captureProjects = () => [...items('personalProjects'), ...items('workProjects')].map((p) => p.title).filter(Boolean);
-function openCaptureModal() {
-  openOverlay(`<div class="modal cap-modal"><div class="modal-head"><h3>Capturar</h3><button class="icon-btn" data-action="close-overlay" aria-label="Fechar">${icon('x')}</button></div>
-    <div class="cap-modal-body">${captureBox(captureProjects(), true)}</div></div>`, (bd) => bd.querySelector('#cap-text')?.focus());
-}
+function openCaptureModal() { openTaskModal(); }
 export { openCaptureModal };
 on('capture-open', openCaptureModal);
 on('focus-scroll', () => document.querySelector('.focus-timer')?.scrollIntoView({ block: 'center', behavior: 'smooth' }));

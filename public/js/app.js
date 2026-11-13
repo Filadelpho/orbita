@@ -9,6 +9,7 @@ import { mountDashCover } from './cover.js';
 import { startPixels } from './pixels.js';
 import './event-modal.js';
 import './habit-modal.js';
+import './task-modal.js';
 import { habitList, habitDue } from './habits.js';
 
 const app = document.getElementById('app');
