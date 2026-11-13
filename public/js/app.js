@@ -7,6 +7,7 @@ import { PAGES, MODULE_INFO, moduleOn, go, genericPage, askAI } from './views.js
 import { applyAppearance, dockPages as pinnedPages, quickAddMenu, handleShortcut, hooks, avatarInner, scrollToPending } from './settings.js';
 import { mountDashCover } from './cover.js';
 import { startPixels } from './pixels.js';
+import './event-modal.js';
 
 const app = document.getElementById('app');
 

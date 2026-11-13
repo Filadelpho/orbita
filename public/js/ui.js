@@ -115,7 +115,11 @@ function fieldInput(f, v) {
   }
 }
 
+// Janelas próprias para criar itens de algumas coleções (ex.: compromissos).
+export const formHooks = {};
+
 export function openForm(key, id = null, defaults = {}) {
+  if (!id && formHooks[key]) return formHooks[key](defaults);
   const cfg = COLLECTIONS[key];
   const item = id ? find(key, id) : { ...defaults };
   const title = id ? `Editar ${cfg.singular}` : `Novo(a) ${cfg.singular}`;

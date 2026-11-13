@@ -29,7 +29,7 @@ A tela de entrada, o Início e as Configurações seguem o layout do [NEXO](http
 | Módulo | O que tem |
 |---|---|
 | **Início** | Dois estilos: com capa (pixels, Unsplash ou foto própria) e captura rápida, ou clássico (saudação e botões Personalizar, Iniciar foco e Capturar). Cartões em três seções: **Hoje** (humor e energia, hábitos, tarefas, agenda, tempo de foco), **Progresso** (metas, projetos em andamento, finanças, conteúdos, estudos) e **Ritmo** (foco por item, metas e conquistas, mosaico de tarefas concluídas, ritmo da semana em radar e o que seus dados mostram). |
-| **Tarefas e calendário** | Tarefas com prioridade, área, projeto e tags. Calendário mensal que reúne os outros módulos. |
+| **Tarefas e calendário** | Tarefas com prioridade, área, projeto e tags. Calendário mensal que reúne os outros módulos. Novo compromisso em uma janela de três colunas: título, pauta, duração, repetição e formato (Google Meet, link, presencial ou telefone), calendário do mês e horários livres do dia, com os ocupados marcados. |
 | **Hábitos e metas** | Hábitos com sequência de dias, metas com progresso e projetos pessoais em quadro com arrastar e soltar. |
 | **Trabalho e carreira** | Projetos e entregas em quadro, carreira, portfólio e certificações. |
 | **Educação** | Faculdade, programação, idiomas, cursos, certificações e leitura. |
@@ -70,6 +70,7 @@ public/
   js/ai.js           ORBITA AI: linguagem natural, relatórios e insights
   js/settings.js     configurações, temas, atalhos e lembretes
   js/home.js         cartões de progresso e ritmo do Início
+  js/event-modal.js  janela de novo compromisso
   js/cover.js        capa do Início: animada, Unsplash ou foto própria
   js/pixels.js       fundo animado de pixels
   js/charts.js       gráficos em SVG
