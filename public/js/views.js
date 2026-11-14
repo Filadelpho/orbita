@@ -12,6 +12,7 @@ import { tasksPage } from './tasks.js';
 import { calendarPage } from './agenda.js';
 import { projectsPage } from './projects.js';
 import { goalsPage, goalProgress } from './goals.js';
+import { financePage } from './finance.js';
 import { habitList, habitTree, groupChildren, habitDue, challengeInfo, freqLabel } from './habits.js';
 import { dLink, dCard, dEmpty, dBtn, fmtMin, focusWeek, focusBars, focusItemsCard, projectsCard, achievementsCard, heatmapCard, rhythmCard, dataCard } from './home.js';
 
@@ -631,53 +632,6 @@ document.addEventListener('drop', (e) => {
 });
 
 // ---------- Finanças ----------
-function financePage() {
-  const f = financeSummary();
-  const prev = financeSummary(-1);
-  const budgets = state.settings.budgets || {};
-  const inv = items('investments');
-  const invTotal = inv.reduce((a, i) => a + +i.amount, 0);
-  const subs = items('subscriptions');
-  const subsTotal = subs.reduce((a, s) => a + (s.cycle === 'Anual' ? s.amount / 12 : +s.amount), 0);
-  const debt = items('bills').filter((b) => b.type === 'Dívida').reduce((a, b) => a + (+b.remaining || 0), 0);
-  const cats = Object.entries(f.byCat).sort((a, b) => b[1] - a[1]);
-  const months = [];
-  for (let k = -5; k <= 0; k++) {
-    const s = financeSummary(k);
-    const d = new Date(); d.setDate(1); d.setMonth(d.getMonth() + k);
-    months.push({ label: monthShort(d.getMonth()), values: [s.income, s.expense] });
-  }
-  const delta = prev.expense ? ((f.expense - prev.expense) / prev.expense) * 100 : 0;
-  const budgetRows = Object.keys({ ...budgets, ...f.byCat }).map((c) => [c, f.byCat[c] || 0, budgets[c] || 0]).sort((a, b) => b[1] - a[1]);
-  const month = MONTHS_FULL[new Date().getMonth()];
-
-  return head('Finanças', `Visão de ${month}: gastos, orçamento, contas, investimentos e assinaturas.`, `
-      <button class="btn" data-action="edit-budget">${icon('target')}Orçamento</button>
-      <button class="btn primary" data-action="open-form" data-key="transactions">${icon('plus')}Lançamento</button>`) + `
-    <div class="grid cols-4" style="margin-bottom:16px">
-      <div class="card"><div class="stat"><span class="label">Saldo do mês</span><span class="value ${f.balance < 0 ? 'down' : ''}">${brl(f.balance)}</span><span class="delta muted">${f.income ? Math.round((f.balance / f.income) * 100) + '% da renda poupada' : '—'}</span></div></div>
-      <div class="card"><div class="stat"><span class="label">${icon('arrowUp')}Receitas</span><span class="value up">${brl(f.income)}</span></div></div>
-      <div class="card"><div class="stat"><span class="label">${icon('arrowDown')}Despesas</span><span class="value">${brl(f.expense)}</span><span class="delta ${delta > 0 ? 'down' : 'up'}">${prev.expense ? (delta > 0 ? '+' : '') + delta.toFixed(0) + '% vs. mês anterior' : ''}</span></div></div>
-      <div class="card"><div class="stat"><span class="label">${icon('chart')}Patrimônio investido</span><span class="value">${brl(invTotal)}</span><span class="delta muted">${debt ? 'Dívidas: ' + brl(debt) : 'Sem dívidas'}</span></div></div>
-    </div>
-    <div class="dash" style="margin-bottom:16px">
-      <div class="card span-7">${cardHead('chart', 'Receitas x despesas (6 meses)')}${groupedBars(months, ['var(--accent)', 'var(--surface-3)'], { fmt: brlShort, height: 200 })}
-        <div class="legend"><span><i style="background:var(--accent)"></i>Receitas</span><span><i style="background:var(--surface-3)"></i>Despesas</span></div></div>
-      <div class="card span-5">${cardHead('wallet', 'Para onde foi o dinheiro')}
-        ${cats.length ? `<div style="display:flex;gap:18px;align-items:center;flex-wrap:wrap">${donut(cats.map(([c, v], i) => ({ label: `${c}: ${brl(v)}`, value: v, color: PALETTE[i % PALETTE.length] })))}
-        <div style="flex:1;min-width:140px;display:flex;flex-direction:column;gap:6px">${cats.slice(0, 6).map(([c, v], i) => `<div style="display:flex;align-items:center;gap:8px;font-size:13px"><i style="width:8px;height:8px;border-radius:2px;background:${PALETTE[i % PALETTE.length]}"></i><span style="flex:1">${esc(c)}</span><span class="muted">${Math.round((v / f.expense) * 100)}%</span></div>`).join('')}</div></div>` : emptyState('wallet', 'Sem despesas neste mês.')}</div>
-      <div class="card span-7">${cardHead('target', 'Orçamento mensal', `<button class="more" data-action="edit-budget">Editar${icon('chevR')}</button>`)}
-        ${budgetRows.map(([c, spent, lim]) => {
-          const pct = lim ? Math.min(100, (spent / lim) * 100) : 0;
-          return `<div class="catbar"><span>${esc(c)}</span><div class="bar ${pct >= 100 ? 'red' : pct >= 85 ? 'yellow' : ''}"><i style="width:${lim ? pct : 0}%"></i></div><span class="val">${brl(spent)}${lim ? ` <span class="muted">/ ${brl(lim)}</span>` : ''}</span></div>`;
-        }).join('')}</div>
-      <div class="card span-5">${cardHead('refresh', 'Assinaturas', `<span class="more">${brl(subsTotal)}/mês</span>`)}
-        <div class="list">${subs.map((s) => itemRow('subscriptions', s, { compact: true })).join('') || emptyState('refresh', 'Nenhuma assinatura.')}</div>
-        <div class="muted" style="font-size:12.5px;margin-top:8px">${brl(subsTotal * 12)} por ano em assinaturas.</div></div>
-    </div>
-    ${tabbed('finance', ['transactions', 'bills', 'investments', 'subscriptions'])}`;
-}
-
 on('edit-budget', () => {
   const b = state.settings.budgets || {};
   openOverlay(`<form class="modal" data-submit="save-budget"><div class="modal-head"><h3>Orçamento mensal por categoria</h3><button type="button" class="icon-btn" data-action="close-overlay">${icon('x')}</button></div>

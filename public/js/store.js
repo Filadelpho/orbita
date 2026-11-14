@@ -222,8 +222,13 @@ export function seed() {
   d.bills = [
     { title: 'Fatura cartão Nubank', type: 'Conta', amount: 1840.5, due: T, paid: false },
     { title: 'Internet fibra', type: 'Conta', amount: 119.9, due: addDays(3), paid: false },
-    { title: 'Financiamento do carro', type: 'Dívida', amount: 980, due: addDays(12), paid: false, remaining: 14700 },
+    { title: 'Financiamento do carro', type: 'Dívida', amount: 980, due: addDays(12), paid: false, remaining: 14700, rate: 1.4 },
     { title: 'Condomínio', type: 'Conta', amount: 520, due: addDays(-3), paid: true },
+  ].map(id);
+
+  d.recurring = [
+    { desc: 'Salário', type: 'Receita', amount: 6500, day: 5, category: 'Salário' },
+    { desc: 'Aluguel', type: 'Despesa', amount: 1800, day: 6, category: 'Moradia' },
   ].map(id);
 
   d.investments = [

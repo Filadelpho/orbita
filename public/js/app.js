@@ -13,6 +13,7 @@ import './task-modal.js';
 import { afterCalendarRender } from './agenda.js';
 import './projects.js';
 import './goals.js';
+import './finance.js';
 import { habitList, habitDue } from './habits.js';
 
 const app = document.getElementById('app');

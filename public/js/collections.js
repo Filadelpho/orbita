@@ -1,7 +1,7 @@
 // Definição declarativa de cada coleção: campos, exibição e regras.
 import { today, state } from './store.js';
 
-export const EXPENSE_CATS = ['Alimentação', 'Moradia', 'Transporte', 'Saúde', 'Educação', 'Lazer', 'Assinaturas', 'Compras', 'Outros'];
+export const EXPENSE_CATS = ['Alimentação', 'Mercado', 'Moradia', 'Transporte', 'Saúde', 'Educação', 'Lazer', 'Assinaturas', 'Compras', 'Software', 'Impostos', 'Investimentos', 'Outros'];
 export const INCOME_CATS = ['Salário', 'Freelance', 'Investimentos', 'Presente', 'Outros'];
 export const AREAS = ['Pessoal', 'Trabalho', 'Estudos', 'Finanças', 'Saúde', 'Carreira', 'Conteúdo'];
 
@@ -125,6 +125,8 @@ export const COLLECTIONS = {
       { name: 'amount', label: 'Valor (R$)', type: 'money', required: true },
       { name: 'category', label: 'Categoria', type: 'select', options: [...EXPENSE_CATS, ...INCOME_CATS.filter((c) => c !== 'Outros')] },
       { name: 'date', label: 'Data', type: 'date', default: today },
+      { name: 'account', label: 'Conta ou cartão', type: 'select', options: () => (state.data.accounts || []).map((a) => [a.id, a.name]) },
+      { name: 'tags', label: 'Tags', type: 'text' },
     ],
     primary: 'desc', meta: ['category', 'date'], amount: 'amount',
     sort: (a, b) => b.date.localeCompare(a.date),
@@ -137,6 +139,7 @@ export const COLLECTIONS = {
       { name: 'amount', label: 'Valor da parcela (R$)', type: 'money', required: true },
       { name: 'due', label: 'Vencimento', type: 'date', default: today },
       { name: 'remaining', label: 'Saldo devedor (R$)', type: 'money' },
+      { name: 'rate', label: 'Juros (% ao mês)', type: 'number' },
     ],
     meta: ['type', 'due', 'remaining'], amount: 'amount',
     sort: (a, b) => (a.paid - b.paid) || a.due.localeCompare(b.due),
@@ -161,6 +164,40 @@ export const COLLECTIONS = {
       { name: 'category', label: 'Categoria', type: 'text' },
     ],
     primary: 'name', meta: ['cycle', 'next', 'category'], amount: 'amount',
+  },
+  accounts: {
+    label: 'Bancos e cartões', singular: 'conta ou cartão', icon: 'wallet',
+    fields: [
+      { name: 'name', label: 'Nome', type: 'text', required: true, full: true },
+      { name: 'kind', label: 'Tipo', type: 'select', options: ['Conta corrente', 'Poupança', 'Carteira', 'Cartão de crédito'], default: 'Conta corrente' },
+      { name: 'balance', label: 'Saldo inicial (R$)', type: 'number' },
+      { name: 'limit', label: 'Limite do cartão (R$)', type: 'money' },
+      { name: 'dueDay', label: 'Dia de vencimento da fatura', type: 'number' },
+      { name: 'color', label: 'Cor', type: 'select', options: [['#4a86c5', 'Azul'], ['#7b6cc4', 'Roxo'], ['#3a9688', 'Verde'], ['#c4973b', 'Amarelo'], ['#c2566f', 'Rosa'], ['#8e8e93', 'Cinza']] },
+    ],
+    primary: 'name', meta: ['kind'],
+  },
+  savings: {
+    label: 'Metas financeiras', singular: 'meta financeira', icon: 'target',
+    fields: [
+      { name: 'title', label: 'Meta', type: 'text', required: true, full: true },
+      { name: 'target', label: 'Valor da meta (R$)', type: 'money' },
+      { name: 'saved', label: 'Já guardado (R$)', type: 'money' },
+      { name: 'monthly', label: 'Aporte por mês (R$)', type: 'money' },
+      { name: 'deadline', label: 'Prazo', type: 'date' },
+    ],
+    primary: 'title', meta: ['deadline'], amount: 'target',
+  },
+  recurring: {
+    label: 'Recorrentes', singular: 'recorrente', icon: 'repeat',
+    fields: [
+      { name: 'desc', label: 'Descrição', type: 'text', required: true, full: true },
+      { name: 'type', label: 'Tipo', type: 'select', options: ['Despesa', 'Receita'], default: 'Despesa' },
+      { name: 'amount', label: 'Valor (R$)', type: 'money', required: true },
+      { name: 'day', label: 'Dia do mês', type: 'number' },
+      { name: 'category', label: 'Categoria', type: 'select', options: [...EXPENSE_CATS, ...INCOME_CATS.filter((c) => c !== 'Outros')] },
+    ],
+    primary: 'desc', meta: ['type', 'day'], amount: 'amount',
   },
   moods: {
     label: 'Humor', singular: 'registro de humor', icon: 'smile',
