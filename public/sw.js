@@ -1,9 +1,9 @@
 // Service worker: deixa o ORBITA funcionando offline (network-first, cai no cache).
-const CACHE = 'orbita-v23';
+const CACHE = 'orbita-v24';
 const SHELL = [
   './', 'index.html', 'css/styles.css', 'icon.svg', 'manifest.webmanifest',
   'js/app.js', 'js/store.js', 'js/ui.js', 'js/icons.js', 'js/collections.js',
-  'js/views.js', 'js/ai.js', 'js/charts.js', 'js/pixels.js', 'js/cover.js', 'js/settings.js', 'js/home.js', 'js/event-modal.js', 'js/habits.js', 'js/habit-modal.js', 'js/task-modal.js', 'js/tasks.js', 'js/agenda.js', 'js/projects.js', 'js/goals.js', 'js/finance.js',
+  'js/views.js', 'js/ai.js', 'js/charts.js', 'js/pixels.js', 'js/cover.js', 'js/settings.js', 'js/home.js', 'js/event-modal.js', 'js/habits.js', 'js/habit-modal.js', 'js/task-modal.js', 'js/tasks.js', 'js/agenda.js', 'js/projects.js', 'js/goals.js', 'js/finance.js', 'js/health.js',
 ];
 
 self.addEventListener('install', (e) => {

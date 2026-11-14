@@ -41,7 +41,7 @@ function streak(isActive) {
 const activeDay = (d) => {
   if (doneByDay()[d]) return true;
   if (habitList().some((h) => h.log?.[d])) return true;
-  if (items('moods').some((m) => m.date === d)) return true;
+  if (items('moods').some((m) => m.date === d && m.score)) return true;
   return items('focus').some((f) => f.date === d);
 };
 
@@ -210,7 +210,7 @@ export function rhythmCard() {
 
 // ---------- O que seus dados mostram ----------
 export function dataCard() {
-  const moods = items('moods');
+  const moods = items('moods').filter((m) => m.score);
   const out = [];
   const recent = moods.filter((m) => m.date >= addDays(-28));
   if (recent.length >= 7) {

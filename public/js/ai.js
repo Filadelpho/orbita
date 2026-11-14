@@ -69,7 +69,7 @@ export function insights() {
   const sleep = items('sleep').filter((s) => s.date >= addDays(-7)).map((s) => +s.hours);
   if (sleep.length >= 3 && avg(sleep) < 7) out.push({ kind: 'warn', text: `Média de sono da semana: ${avg(sleep).toFixed(1)} h. Tente dormir 30 min mais cedo.` });
 
-  const moods = items('moods').filter((m) => m.date >= addDays(-7)).map((m) => +m.score);
+  const moods = items('moods').filter((m) => m.score && m.date >= addDays(-7)).map((m) => +m.score);
   const workouts = items('workouts').filter((w) => w.date >= addDays(-7));
   if (moods.length >= 3 && avg(moods) < 3) out.push({ kind: 'warn', text: 'Seu humor esteve mais baixo esta semana. Uma caminhada ou pausa pode ajudar.' });
   if (workouts.length >= 3) out.push({ kind: 'good', text: `Ótimo! ${workouts.length} treinos nos últimos 7 dias.` });
@@ -287,7 +287,7 @@ export function weeklyReport() {
   const spent = tx.reduce((a, t) => a + +t.amount, 0);
   const workouts = items('workouts').filter((w) => w.date >= from);
   const sleep = items('sleep').filter((s) => s.date >= from).map((s) => +s.hours);
-  const moods = items('moods').filter((m) => m.date >= from).map((m) => +m.score);
+  const moods = items('moods').filter((m) => m.score && m.date >= from).map((m) => +m.score);
   const studyH = items('studies').reduce((a, s) => a + (+s.hours || 0), 0);
   return `**Relatório dos últimos 7 dias**\n` +
     `✅ Tarefas: ${done}/${tasks.length} concluídas${tasks.length ? ` (${Math.round((done / tasks.length) * 100)}%)` : ''}\n` +
@@ -334,7 +334,7 @@ export function suggestions() {
 export function healthReport() {
   const from = addDays(-13);
   const sleep = items('sleep').filter((s) => s.date >= from).map((s) => +s.hours);
-  const moods = items('moods').filter((m) => m.date >= from).map((m) => +m.score);
+  const moods = items('moods').filter((m) => m.score && m.date >= from).map((m) => +m.score);
   const workouts = items('workouts').filter((w) => w.date >= addDays(-6));
   const kcal = items('meals').filter((m) => m.date === today()).reduce((a, m) => a + (+m.kcal || 0), 0);
   return `**Saúde e bem-estar (14 dias)**\n` +
@@ -348,7 +348,7 @@ export function healthReport() {
 function correlation() {
   const byDate = {};
   items('sleep').forEach((s) => { byDate[s.date] = { s: +s.hours }; });
-  items('moods').forEach((m) => { if (byDate[m.date]) byDate[m.date].m = +m.score; });
+  items('moods').forEach((m) => { if (m.score && byDate[m.date]) byDate[m.date].m = +m.score; });
   const pairs = Object.values(byDate).filter((p) => p.m != null);
   if (pairs.length < 4) return 0;
   const ms = avg(pairs.map((p) => p.s)), mm = avg(pairs.map((p) => p.m));

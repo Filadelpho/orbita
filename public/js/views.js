@@ -13,6 +13,7 @@ import { calendarPage } from './agenda.js';
 import { projectsPage } from './projects.js';
 import { goalsPage, goalProgress } from './goals.js';
 import { financePage } from './finance.js';
+import { healthPage } from './health.js';
 import { habitList, habitTree, groupChildren, habitDue, challengeInfo, freqLabel } from './habits.js';
 import { dLink, dCard, dEmpty, dBtn, fmtMin, focusWeek, focusBars, focusItemsCard, projectsCard, achievementsCard, heatmapCard, rhythmCard, dataCard } from './home.js';
 
@@ -28,7 +29,7 @@ export const PAGES = [
   { id: 'work', group: 'Carreira e estudos', title: 'Trabalho e carreira', icon: 'briefcase', module: 'work', tabs: ['workProjects', 'career'], desc: 'Projetos, entregas, desenvolvimento profissional e portfólio.' },
   { id: 'studies', group: 'Carreira e estudos', title: 'Educação', icon: 'grad', module: 'studies', tabs: ['studies', 'books'], desc: 'Faculdade, programação, idiomas, cursos, certificações e leitura.' },
   { id: 'finance', group: 'Vida', title: 'Finanças', icon: 'wallet', module: 'finance', render: financePage },
-  { id: 'health', group: 'Vida', title: 'Saúde e bem-estar', icon: 'heart', module: 'health', render: healthPage },
+  { id: 'health', group: 'Vida', title: 'Saúde', icon: 'heart', module: 'health', render: healthPage },
   { id: 'content', group: 'Vida', title: 'Criatividade e conteúdo', icon: 'pen', module: 'content', render: contentPage },
   { id: 'travel', group: 'Vida', title: 'Viagens e lazer', icon: 'plane', module: 'travel', tabs: ['trips', 'leisure'], desc: 'Destinos, roteiros, orçamentos e momentos de lazer.' },
   { id: 'settings', group: 'Sistema', title: 'Configurações', icon: 'gear', render: settingsPage },
@@ -221,7 +222,7 @@ function dashboard() {
     const mood = items('moods').find((m) => m.date === T);
     const strip = [];
     for (let k = -13; k <= 0; k++) {
-      const m = items('moods').find((x) => x.date === addDays(k));
+      const m = items('moods').find((x) => x.date === addDays(k) && x.score);
       strip.push(`<i class="${m ? 'm' + m.score : ''}" title="${m ? MOOD_LABEL[m.score - 1] : 'Sem registro'}"></i>`);
     }
     hoje.push(dCard('smile', 'Como foi hoje?', `
@@ -646,41 +647,6 @@ on('save-budget', (ds, form) => {
   closeOverlay();
   toast('Orçamento atualizado');
 });
-
-// ---------- Saúde ----------
-function healthPage() {
-  const T = today();
-  const mood = items('moods').find((m) => m.date === T);
-  const sleep = items('sleep').filter((s) => s.date >= addDays(-13)).sort((a, b) => a.date.localeCompare(b.date));
-  const sleepAvg = avg(sleep.slice(-7).map((s) => +s.hours));
-  const wk = items('workouts').filter((w) => w.date >= addDays(-6));
-  const kcal = items('meals').filter((m) => m.date === T).reduce((a, m) => a + (+m.kcal || 0), 0);
-  const moods = [];
-  const ml = [];
-  for (let k = -13; k <= 0; k++) {
-    const d = addDays(k);
-    const m = items('moods').find((x) => x.date === d);
-    if (m) { moods.push(+m.score); ml.push(k % 2 === 0 ? String(parseISO(d).getDate()) : ''); }
-  }
-  return head('Saúde e bem-estar', 'Humor, sono, exercícios, alimentação e diário pessoal.', `
-      <button class="btn" data-action="open-form" data-key="sleep">${icon('moon')}Sono</button>
-      <button class="btn" data-action="open-form" data-key="workouts">${icon('dumbbell')}Treino</button>
-      <button class="btn primary" data-action="open-form" data-key="journal">${icon('pen')}Escrever no diário</button>`) + `
-    <div class="grid cols-4" style="margin-bottom:16px">
-      <div class="card"><div class="stat"><span class="label">Humor hoje</span><span class="value">${mood ? MOODS[mood.score - 1] + ' ' + MOOD_LABEL[mood.score - 1] : '—'}</span></div></div>
-      <div class="card"><div class="stat"><span class="label">Sono médio (7 dias)</span><span class="value ${sleepAvg && sleepAvg < 7 ? 'down' : ''}">${sleepAvg ? sleepAvg.toFixed(1) + ' h' : '—'}</span></div></div>
-      <div class="card"><div class="stat"><span class="label">Treinos na semana</span><span class="value">${wk.length}</span><span class="delta muted">${wk.reduce((a, w) => a + (+w.duration || 0), 0)} min no total</span></div></div>
-      <div class="card"><div class="stat"><span class="label">Calorias hoje</span><span class="value">${kcal || '—'}</span><span class="delta muted">${kcal ? 'kcal registradas' : 'registre suas refeições'}</span></div></div>
-    </div>
-    <div class="dash" style="margin-bottom:16px">
-      <div class="card span-6">${cardHead('smile', 'Acompanhamento de humor')}
-        <div class="mood-picker">${MOODS.map((e, i) => `<button class="mood-btn ${mood?.score === i + 1 ? 'on' : ''}" data-action="log-mood" data-score="${i + 1}" title="${MOOD_LABEL[i]}">${e}</button>`).join('')}</div>
-        <div style="margin-top:14px">${moods.length > 1 ? areaLine(moods, { height: 110, min: 1, max: 5, labels: ml, color: 'var(--purple)' }) : emptyState('smile', 'Registre seu humor por alguns dias para ver a evolução.')}</div></div>
-      <div class="card span-6">${cardHead('moon', 'Sono (14 dias)')}
-        ${sleep.length > 1 ? areaLine(sleep.map((s) => +s.hours), { height: 150, min: 4, max: 10, labels: sleep.map((s, i) => (i % 2 ? '' : String(parseISO(s.date).getDate()))), color: 'var(--accent-2)' }) : emptyState('moon', 'Sem registros de sono.')}</div>
-    </div>
-    ${tabbed('health', ['journal', 'workouts', 'meals', 'sleep'])}`;
-}
 
 // ---------- Conteúdo ----------
 function contentPage() {

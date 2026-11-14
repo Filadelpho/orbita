@@ -78,6 +78,7 @@ public/
   js/projects.js     projetos: grade, lista e página de cada projeto
   js/goals.js        metas: cartões com anel de progresso e progresso automático
   js/finance.js      finanças: disponível hoje, transações, contas, compras, metas, orçamento, dívidas, análises e importação de extrato
+  js/health.js       saúde: o dia (humor, sono, água, remédios, diário), remédios com horários, consultas e padrões
   js/habits.js       regras dos hábitos: grupos, frequência e desafios
   js/cover.js        capa do Início: animada, Unsplash ou foto própria
   js/pixels.js       fundo animado de pixels

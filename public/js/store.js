@@ -66,6 +66,11 @@ export function save() {
   listeners.forEach((fn) => fn());
 }
 
+// Grava sem redesenhar a tela (para textos que salvam enquanto a pessoa digita).
+export function persist() {
+  try { localStorage.setItem(KEY, JSON.stringify(state)); } catch (e) { /* storage cheio/bloqueado */ }
+}
+
 export function replaceState(next) {
   state = next;
   save();
@@ -230,6 +235,9 @@ export function seed() {
     { desc: 'Salário', type: 'Receita', amount: 6500, day: 5, category: 'Salário' },
     { desc: 'Aluguel', type: 'Despesa', amount: 1800, day: 6, category: 'Moradia' },
   ].map(id);
+
+  d.meds = [{ kind: 'Suplemento', name: 'Vitamina D', dose: '1 cápsula', when: 'daily', days: [], every: 2, cycleOn: '', cycleOff: '', times: ['08:00'], start: addDays(-20), end: '', how: 'Com comida', stock: 24, note: '', taken: {}, log: {} }].map(id);
+  d.appts = [{ kind: 'Consulta', with: 'Dentista (limpeza)', date: addDays(9), time: '14:30', place: 'Clínica Sorriso', notes: 'Perguntar sobre clareamento', follow: '180', returnDate: addDays(189) }].map(id);
 
   d.investments = [
     { name: 'Tesouro Selic 2029', type: 'Renda fixa', amount: 4200, return: 10.6 },

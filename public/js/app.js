@@ -14,6 +14,7 @@ import { afterCalendarRender } from './agenda.js';
 import './projects.js';
 import './goals.js';
 import './finance.js';
+import { healthNotifs } from './health.js';
 import { habitList, habitDue } from './habits.js';
 
 const app = document.getElementById('app');
@@ -148,6 +149,7 @@ function notifications() {
     items('subscriptions').filter((s) => s.next && s.next >= T && s.next <= addDays(3)).forEach((s) => out.push({ ico: 'refresh', cls: '', text: `${s.name} renova ${relDate(s.next).toLowerCase()} (${brl(s.amount)})`, key: 'subscriptions', id: s.id }));
   }
   if (moduleOn('calendar')) items('events').filter((e) => e.date === T).forEach((e) => out.push({ ico: 'calendar', cls: 'blue', text: `${e.time || 'Hoje'} · ${e.title}`, key: 'events', id: e.id }));
+  if (moduleOn('health')) out.push(...healthNotifs());
   if (moduleOn('habits')) {
     const pend = habitList().filter((h) => habitDue(h, T) && !h.log?.[T]);
     if (pend.length && new Date().getHours() >= 18) out.push({ ico: 'repeat', cls: 'yellow', text: `${pend.length} hábito(s) ainda não concluído(s) hoje`, route: 'habits' });
