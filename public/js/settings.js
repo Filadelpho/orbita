@@ -163,7 +163,7 @@ export function applyAppearance() {
 mq.addEventListener?.('change', () => { if (S().theme === 'system') applyAppearance(); });
 
 // ---------- Navegação: dock e botão + ----------
-export const DOCK_DEFAULT = ['dashboard', 'tasks', 'calendar', 'habits', 'finance', 'ai'];
+export const DOCK_DEFAULT = ['dashboard', 'tasks', 'projects', 'calendar', 'habits', 'finance', 'ai'];
 export const DOCK_MAX = 8;
 export function dockPages() {
   const ids = (cfg('dock', DOCK_DEFAULT) || DOCK_DEFAULT);

@@ -84,11 +84,11 @@ export function projectsCard() {
       const ts = tasks.filter((t) => t.project && t.project === p.title);
       const done = ts.filter((t) => t.done).length;
       const pct = ts.length ? Math.round((done / ts.length) * 100) : 0;
-      return `<button class="prow" data-action="open-form" data-key="${p.key}" data-id="${p.id}"><span class="pt"><b>${esc(p.title)}</b><small>${ts.length ? `${done} de ${plural(ts.length, 'tarefa', 'tarefas')}` : esc(p.status)}${p.deadline ? ' · até ' + p.deadline.split('-').reverse().slice(0, 2).join('/') : ''}</small></span>
+      return `<button class="prow" data-action="pj-open" data-id="${p.id}"><span class="pt"><b>${esc(p.title)}</b><small>${ts.length ? `${done} de ${plural(ts.length, 'tarefa', 'tarefas')}` : esc(p.status)}${p.deadline ? ' · até ' + p.deadline.split('-').reverse().slice(0, 2).join('/') : ''}</small></span>
         <span class="bar"><i style="width:${pct}%"></i></span></button>`;
     }).join('')}</div>`
     : dEmpty('folder', 'Nenhum projeto ativo', 'Junte as tarefas e os prazos de um mesmo trabalho.', dBtn('Criar seu primeiro projeto', 'data-action="open-form" data-key="personalProjects"')),
-  { link: dLink('goals', 'Projetos') });
+  { link: dLink('projects', 'Projetos') });
 }
 
 // ---------- Metas e conquistas ----------

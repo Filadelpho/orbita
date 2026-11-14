@@ -10,6 +10,7 @@ import { settingsPage } from './settings.js';
 import { openTaskModal } from './task-modal.js';
 import { tasksPage } from './tasks.js';
 import { calendarPage } from './agenda.js';
+import { projectsPage } from './projects.js';
 import { habitList, habitTree, groupChildren, habitDue, challengeInfo, freqLabel } from './habits.js';
 import { dLink, dCard, dEmpty, dBtn, fmtMin, focusWeek, focusBars, focusItemsCard, projectsCard, achievementsCard, heatmapCard, rhythmCard, dataCard } from './home.js';
 
@@ -19,6 +20,7 @@ export const PAGES = [
   { id: 'ai', title: 'ORBITA AI', icon: 'spark', render: aiPage },
   { id: 'tasks', group: 'Organização', title: 'Tarefas', icon: 'check', module: 'tasks', render: () => tasksPage() },
   { id: 'calendar', group: 'Organização', title: 'Calendário', icon: 'calendar', module: 'calendar', render: calendarPage },
+  { id: 'projects', group: 'Organização', title: 'Projetos', icon: 'folder', render: () => projectsPage() },
   { id: 'habits', group: 'Organização', title: 'Hábitos e rotina', icon: 'repeat', module: 'habits', render: habitsPage },
   { id: 'goals', group: 'Organização', title: 'Metas e projetos', icon: 'target', module: 'goals', tabs: ['goals', 'personalProjects'], desc: 'Seus objetivos pessoais e os projetos que te levam até eles.' },
   { id: 'work', group: 'Carreira e estudos', title: 'Trabalho e carreira', icon: 'briefcase', module: 'work', tabs: ['workProjects', 'career'], desc: 'Projetos, entregas, desenvolvimento profissional e portfólio.' },

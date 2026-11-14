@@ -11,6 +11,7 @@ import './event-modal.js';
 import './habit-modal.js';
 import './task-modal.js';
 import { afterCalendarRender } from './agenda.js';
+import './projects.js';
 import { habitList, habitDue } from './habits.js';
 
 const app = document.getElementById('app');
@@ -254,7 +255,7 @@ addEventListener('hashchange', route);
 
 // ---------- Busca global e comandos (Ctrl/Cmd + K) ----------
 const SEARCHABLE = ['tasks', 'events', 'goals', 'personalProjects', 'workProjects', 'career', 'studies', 'books', 'transactions', 'bills', 'investments', 'subscriptions', 'journal', 'workouts', 'posts', 'ideas', 'trips', 'leisure', 'habits'];
-const PAGE_OF = { tasks: 'tasks', events: 'calendar', goals: 'goals', personalProjects: 'goals', workProjects: 'work', career: 'work', studies: 'studies', books: 'studies', transactions: 'finance', bills: 'finance', investments: 'finance', subscriptions: 'finance', journal: 'health', workouts: 'health', posts: 'content', ideas: 'content', trips: 'travel', leisure: 'travel', habits: 'habits' };
+const PAGE_OF = { tasks: 'tasks', events: 'calendar', goals: 'goals', personalProjects: 'projects', workProjects: 'projects', career: 'work', studies: 'studies', books: 'studies', transactions: 'finance', bills: 'finance', investments: 'finance', subscriptions: 'finance', journal: 'health', workouts: 'health', posts: 'content', ideas: 'content', trips: 'travel', leisure: 'travel', habits: 'habits' };
 
 function paletteResults(q) {
   const n = (s) => String(s || '').toLowerCase().normalize('NFD').replace(/\p{Diacritic}/gu, '');
