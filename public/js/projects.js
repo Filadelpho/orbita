@@ -153,8 +153,8 @@ let pm = null;
 export function openProjectModal(defaults = {}, id = null) {
   const cur = id ? findProject(id) : null;
   pm = cur
-    ? { id, key: cur.key, title: cur.title, type: typeOf(cur), color: colorOf(cur), client: cur.client || '', deadline: cur.deadline || '', hours: cur.hours || '', notes: cur.notes || '', status: cur.status === 'Entregue' ? 'Concluído' : cur.status || 'Planejado' }
-    : { id: null, title: defaults.title || '', type: defaults.type || (F().type !== 'all' ? F().type : 'Pessoal'), color: HABIT_COLORS[4], client: '', deadline: '', hours: '', notes: '', status: 'Planejado' };
+    ? { id, key: cur.key, title: cur.title, type: typeOf(cur), color: colorOf(cur), client: cur.client || '', deadline: cur.deadline || '', hours: cur.hours || '', notes: cur.notes || '', goal: cur.goal || '', status: cur.status === 'Entregue' ? 'Concluído' : cur.status || 'Planejado' }
+    : { id: null, title: defaults.title || '', type: defaults.type || (F().type !== 'all' ? F().type : 'Pessoal'), color: HABIT_COLORS[4], client: '', deadline: '', hours: '', notes: '', goal: '', status: 'Planejado' };
   renderModal();
   return true;
 }
@@ -182,6 +182,7 @@ function renderModal(focus = '#pjm-name') {
         <label for="pjm-hours">Horas estimadas de dedicação</label>
         <input id="pjm-hours" class="pjm-input sm mono" type="number" min="0" step="1" data-input="pjm-f" data-f="hours" value="${esc(pm.hours)}" placeholder="Ex.: 20"></div>
       ${pm.id ? `<span class="pjm-label">Status</span><div class="pjm-status">${STATUS.map((s) => `<button class="${pm.status === s ? 'on' : ''}" data-action="pjm-status" data-v="${s}">${s}</button>`).join('')}</div>` : ''}
+      ${(state.data.goals || []).length ? `<label class="pjm-label" for="pjm-goal">Meta</label><div class="hbm-select"><select id="pjm-goal" data-change="pjm-goal"><option value="">Nenhuma meta</option>${state.data.goals.map((g) => `<option value="${g.id}" ${pm.goal === g.id ? 'selected' : ''}>${esc(g.title)}</option>`).join('')}</select>${icon('chevD')}</div>` : ''}
       <label class="pjm-label" for="pjm-desc">Descrição</label>
       <textarea id="pjm-desc" class="pjm-input area" data-input="pjm-f" data-f="notes" rows="3" placeholder="Qual o objetivo deste projeto?">${esc(pm.notes)}</textarea>
     </div>
@@ -197,12 +198,13 @@ on('pjm-type', (ds) => { pm.type = ds.v; renderModal(null); });
 on('pjm-color', (ds) => { pm.color = ds.v; renderModal(null); });
 on('pjm-status', (ds) => { pm.status = ds.v; renderModal(null); });
 on('pjm-due', (ds, el) => { pm.deadline = el.value; renderModal(null); });
+on('pjm-goal', (ds, el) => { pm.goal = el.value; });
 on('pjm-due-clear', () => { pm.deadline = ''; renderModal(null); });
 on('pjm-save', () => {
   const title = pm.title.trim();
   if (!title) return;
   const key = keyFor(pm.type);
-  const data = { title, type: pm.type, color: pm.color, client: pm.client.trim(), deadline: pm.deadline, hours: pm.hours === '' ? '' : +pm.hours, notes: pm.notes.trim() };
+  const data = { title, type: pm.type, color: pm.color, client: pm.client.trim(), deadline: pm.deadline, hours: pm.hours === '' ? '' : +pm.hours, notes: pm.notes.trim(), goal: pm.goal || '' };
   if (pm.id) {
     const old = findProject(pm.id);
     const status = pm.status === 'Concluído' && old.key === 'workProjects' && key === 'workProjects' ? 'Entregue' : pm.status;

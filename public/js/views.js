@@ -11,6 +11,7 @@ import { openTaskModal } from './task-modal.js';
 import { tasksPage } from './tasks.js';
 import { calendarPage } from './agenda.js';
 import { projectsPage } from './projects.js';
+import { goalsPage, goalProgress } from './goals.js';
 import { habitList, habitTree, groupChildren, habitDue, challengeInfo, freqLabel } from './habits.js';
 import { dLink, dCard, dEmpty, dBtn, fmtMin, focusWeek, focusBars, focusItemsCard, projectsCard, achievementsCard, heatmapCard, rhythmCard, dataCard } from './home.js';
 
@@ -22,7 +23,7 @@ export const PAGES = [
   { id: 'calendar', group: 'Organização', title: 'Calendário', icon: 'calendar', module: 'calendar', render: calendarPage },
   { id: 'projects', group: 'Organização', title: 'Projetos', icon: 'folder', render: () => projectsPage() },
   { id: 'habits', group: 'Organização', title: 'Hábitos e rotina', icon: 'repeat', module: 'habits', render: habitsPage },
-  { id: 'goals', group: 'Organização', title: 'Metas e projetos', icon: 'target', module: 'goals', tabs: ['goals', 'personalProjects'], desc: 'Seus objetivos pessoais e os projetos que te levam até eles.' },
+  { id: 'goals', group: 'Organização', title: 'Metas', icon: 'target', module: 'goals', render: goalsPage },
   { id: 'work', group: 'Carreira e estudos', title: 'Trabalho e carreira', icon: 'briefcase', module: 'work', tabs: ['workProjects', 'career'], desc: 'Projetos, entregas, desenvolvimento profissional e portfólio.' },
   { id: 'studies', group: 'Carreira e estudos', title: 'Educação', icon: 'grad', module: 'studies', tabs: ['studies', 'books'], desc: 'Faculdade, programação, idiomas, cursos, certificações e leitura.' },
   { id: 'finance', group: 'Vida', title: 'Finanças', icon: 'wallet', module: 'finance', render: financePage },
@@ -297,9 +298,9 @@ function dashboard() {
   }
 
   if (W.goals && M('goals')) {
-    const g = items('goals').slice(0, 4);
+    const g = items('goals').map((x) => ({ ...x, progress: goalProgress(x).pct })).filter((x) => x.progress < 100).slice(0, 4);
     progresso.push(dCard('target', 'Metas', g.length ? `<div class="glist2">${g.map((x) => `
-      <button class="grow2" data-action="open-form" data-key="goals" data-id="${x.id}"><span class="gt"><i></i><b>${esc(x.title)}</b><em>${+x.progress || 0}%</em></span>
+      <button class="grow2" data-action="gl-edit" data-id="${x.id}"><span class="gt"><i></i><b>${esc(x.title)}</b><em>${+x.progress || 0}%</em></span>
         <span class="bar"><i style="width:${+x.progress || 0}%"></i></span><small>${x.deadline ? 'até ' + fmtDate(x.deadline) : esc(x.area || '')}</small></button>`).join('')}</div>`
       : dEmpty('target', 'Nenhuma meta ainda', 'Defina algo que você quer conquistar.', dBtn('Criar meta', 'data-action="open-form" data-key="goals"')),
     { link: dLink('goals', 'Metas'), cls: 'wide' }));

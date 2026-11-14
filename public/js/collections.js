@@ -22,6 +22,7 @@ export const COLLECTIONS = {
       { name: 'area', label: 'Área', type: 'select', options: AREAS },
       { name: 'status', label: 'Status', type: 'select', options: ['Backlog', 'A fazer', 'Em progresso', 'Em revisão'], default: 'A fazer' },
       { name: 'project', label: 'Projeto', type: 'select', options: () => [...(state.data.personalProjects || []), ...(state.data.workProjects || [])].map((p) => p.title).filter(Boolean) },
+      { name: 'goal', label: 'Meta', type: 'select', options: () => (state.data.goals || []).map((g) => [g.id, g.title]) },
       { name: 'folder', label: 'Pasta', type: 'select', options: () => (state.data.taskFolders || []).map((f) => [f.id, f.name]) },
       { name: 'tags', label: 'Tags', type: 'text' },
       { name: 'notes', label: 'Notas', type: 'textarea', full: true },

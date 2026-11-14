@@ -3,6 +3,7 @@
 import { state, items, upsert, today, addDays, iso, parseISO } from './store.js';
 import { brl, relDate, EXPENSE_CATS } from './collections.js';
 import { habitList, habitDue, streakOf } from './habits.js';
+import { goalProgress } from './goals.js';
 
 const norm = (s) => s.toLowerCase().normalize('NFD').replace(/\p{Diacritic}/gu, '');
 
@@ -79,7 +80,7 @@ export function insights() {
   const best = habitList().map((h) => [h, habitStreak(h)]).sort((a, b) => b[1] - a[1])[0];
   if (best && best[1] >= 3) out.push({ kind: 'good', text: `Sequência de ${best[1]} dias em “${best[0].name}”. Não quebre a corrente!` });
 
-  const goals = items('goals').filter((g) => g.deadline && g.deadline <= addDays(30) && (+g.progress || 0) < 80);
+  const goals = items('goals').map((g) => ({ ...g, progress: goalProgress(g).pct })).filter((g) => g.deadline && g.deadline >= today() && g.deadline <= addDays(30) && g.progress < 80);
   goals.forEach((g) => out.push({ kind: 'warn', text: `Meta “${g.title}” vence ${relDate(g.deadline).toLowerCase()} e está em ${g.progress || 0}%.` }));
 
   if (!out.length) out.push({ kind: 'good', text: 'Tudo em dia por aqui. Bom trabalho!' });
